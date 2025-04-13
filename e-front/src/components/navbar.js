@@ -1,5 +1,6 @@
 import React from "react";
 import { FaUser, FaShoppingCart, FaSearch } from "react-icons/fa";
+import { Link } from "react-router-dom";
 
 const Navbar = () => {
   return (
@@ -29,9 +30,10 @@ const Navbar = () => {
           <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" />
         </div>
 
-        <button className="text-xl">
+        <Link to="/login" className="text-xl">
           <FaUser />
-        </button>
+        </Link>
+
         <button className="text-xl">
           <FaShoppingCart />
         </button>
