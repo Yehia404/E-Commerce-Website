@@ -32,7 +32,10 @@ const Navbar = () => {
         {/* Logo */}
         <Link
           to="/home"
-          className="absolute left-1/2 transform -translate-x-1/2 text-3xl font-extrabold"
+          className="absolute left-1/2 transform -translate-x-1/2 text-5xl font-extrabold"
+          style={{
+            fontFamily: "Dancing Script, cursive",
+          }}
         >
           VibeWear
         </Link>

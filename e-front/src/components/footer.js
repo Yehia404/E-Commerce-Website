@@ -12,7 +12,14 @@ const Footer = () => {
       <div className="grid md:grid-cols-5 gap-10">
         {/* Left Side: Logo + Description + Socials */}
         <div className="md:col-span-2">
-          <h2 className="text-2xl font-bold mb-2">VibeWear</h2>
+          <h2
+            className="text-2xl font-bold mb-2"
+            style={{
+              fontFamily: "Dancing Script, cursive",
+            }}
+          >
+            VibeWear
+          </h2>
           <p className="text-sm max-w-[180px] mb-4">
             We have clothes that suit your style and which you're proud to wear.
             From women to men.

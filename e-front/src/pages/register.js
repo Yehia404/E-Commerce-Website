@@ -2,29 +2,58 @@ import React, { useState } from "react";
 import Navbar from "../components/navbar";
 import Footer from "../components/footer";
 import { Link } from "react-router-dom";
+import Password from "../components/password";
 
-export default function RegisterPage() {
+const Register = () => {
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
     email: "",
     phoneNumber: "",
     password: "",
-    confirmPassword: "",
   });
+
+  const [errors, setErrors] = useState({});
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (formData.firstName.length < 3) {
+      newErrors.firstName = "First name must be at least 3 characters.";
+    }
+
+    if (formData.lastName.length < 3) {
+      newErrors.lastName = "Last name must be at least 3 characters.";
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      newErrors.email = "Enter a valid email address.";
+    }
+
+    if (!/^\d{11}$/.test(formData.phoneNumber)) {
+      newErrors.phoneNumber = "Phone number must be exactly 11 digits.";
+    }
+
+    if (formData.password.length < 6) {
+      newErrors.password = "Password must be at least 6 characters.";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
-
-    if (formData.password !== formData.confirmPassword) {
-      console.log("Passwords do not match!");
+    if (validateForm()) {
+      console.log("Form submitted:", formData);
+      // handle actual form submission here
     } else {
-      // Submit form data here
-      console.log(formData);
+      console.log("Validation failed");
     }
   };
 
@@ -36,12 +65,11 @@ export default function RegisterPage() {
         <div className="w-1/2 bg-white flex flex-col justify-center items-center p-10">
           <h2 className="text-2xl font-bold mb-6">Register</h2>
 
-          {/* Form Container without Border */}
           <form onSubmit={handleSubmit} className="w-2/3">
             {/* First Name */}
             <div className="mb-4">
               <label className="block text-gray-700 text-sm mb-2">
-                First Name
+                First Name <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -51,12 +79,15 @@ export default function RegisterPage() {
                 placeholder="Enter your first name"
                 className="w-full border-b border-gray-300 py-2 px-4 focus:outline-none focus:border-black"
               />
+              {errors.firstName && (
+                <p className="text-red-500 text-sm mt-1">{errors.firstName}</p>
+              )}
             </div>
 
             {/* Last Name */}
             <div className="mb-4">
               <label className="block text-gray-700 text-sm mb-2">
-                Last Name
+                Last Name <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -66,12 +97,15 @@ export default function RegisterPage() {
                 placeholder="Enter your last name"
                 className="w-full border-b border-gray-300 py-2 px-4 focus:outline-none focus:border-black"
               />
+              {errors.lastName && (
+                <p className="text-red-500 text-sm mt-1">{errors.lastName}</p>
+              )}
             </div>
 
             {/* Email */}
             <div className="mb-4">
               <label className="block text-gray-700 text-sm mb-2">
-                Email Address
+                Email Address <span className="text-red-500">*</span>
               </label>
               <input
                 type="email"
@@ -81,12 +115,15 @@ export default function RegisterPage() {
                 placeholder="Enter your email"
                 className="w-full border-b border-gray-300 py-2 px-4 focus:outline-none focus:border-black"
               />
+              {errors.email && (
+                <p className="text-red-500 text-sm mt-1">{errors.email}</p>
+              )}
             </div>
 
             {/* Phone Number */}
             <div className="mb-4">
               <label className="block text-gray-700 text-sm mb-2">
-                Phone Number
+                Phone Number <span className="text-red-500">*</span>
               </label>
               <input
                 type="tel"
@@ -96,38 +133,19 @@ export default function RegisterPage() {
                 placeholder="Enter your phone number"
                 className="w-full border-b border-gray-300 py-2 px-4 focus:outline-none focus:border-black"
               />
+              {errors.phoneNumber && (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.phoneNumber}
+                </p>
+              )}
             </div>
 
             {/* Password */}
-            <div className="mb-4 relative">
-              <label className="block text-gray-700  text-sm mb-2">
-                Password
-              </label>
-              <input
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                placeholder="Enter your password"
-                className="w-full border-b border-gray-300 py-2 px-4 focus:outline-none focus:border-black"
-              />
-              <span className="absolute right-2 top-8 text-gray-500 cursor-pointer">
-                👁️
-              </span>
-            </div>
-
-            {/* Confirm Password
-            <div className="mb-4 relative">
-              <label className="block text-gray-700 text-sm mb-2">Confirm Password</label>
-              <input
-                type="password"
-                name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                placeholder="Confirm your password"
-                className="w-full border-b border-gray-300 py-2 px-4 focus:outline-none focus:border-black"
-              />
-            </div> */}
+            <Password
+              value={formData.password}
+              onChange={handleChange}
+              error={errors.password}
+            />
 
             {/* Register Button */}
             <button
@@ -160,4 +178,6 @@ export default function RegisterPage() {
       <Footer />
     </div>
   );
-}
+};
+
+export default Register;
