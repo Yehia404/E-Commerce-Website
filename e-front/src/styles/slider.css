@@ -1,0 +1,14 @@
+/* Override Ant Design Slider color */
+.price-slider .ant-slider-rail {
+    background-color: #333 !important;
+}
+  
+.price-slider .ant-slider-track {
+  background-color: #000 !important;
+}
+  
+.price-slider .ant-slider-handle {
+  border-color: #000 !important;
+}
+  
+  

@@ -3,6 +3,7 @@ import { FaStar } from "react-icons/fa";
 import Hero from "../assets/hero.jpg";
 import Navbar from "../components/navbar";
 import Footer from "../components/footer";
+import { Link } from "react-router-dom";
 
 const newArrivals = [
   { id: 1, name: "Trendy Jacket", price: 120 },
@@ -90,9 +91,16 @@ const Home = () => {
             designed to bring out your individuality and cater to your sense of
             style.
           </p>
-          <button className="bg-black text-white px-12 py-2 rounded-full">
-            Shop Now
-          </button>
+
+          <div>
+            <Link
+              to="/shop"
+              className="bg-black text-white px-12 py-2 rounded-full"
+            >
+              Shop Now
+            </Link>
+          </div>
+
           <div className="flex gap-6 pt-4">
             <div>
               <p className="font-bold text-lg">200+</p>
