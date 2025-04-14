@@ -34,12 +34,12 @@ const productsData = [
   },
 ];
 
-function App() {
+const Chat = () => {
   const [cart, setCart] = useState(productsData);
 
   const updateQuantity = (id, delta) => {
-    setCart(cart =>
-      cart.map(item =>
+    setCart((cart) =>
+      cart.map((item) =>
         item.id === id
           ? { ...item, quantity: Math.max(1, item.quantity + delta) }
           : item
@@ -48,10 +48,13 @@ function App() {
   };
 
   const removeItem = (id) => {
-    setCart(cart => cart.filter(item => item.id !== id));
+    setCart((cart) => cart.filter((item) => item.id !== id));
   };
 
-  const subtotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  const subtotal = cart.reduce(
+    (acc, item) => acc + item.price * item.quantity,
+    0
+  );
   const discount = subtotal * 0.2;
   const deliveryFee = 15;
   const total = subtotal - discount + deliveryFee;
@@ -60,11 +63,13 @@ function App() {
     <div>
       <Navbar />
       <div className="min-h-screen bg-gray-50 p-4 sm:p-8">
-        <h1 className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8">Your Cart</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8">
+          Your Cart
+        </h1>
         <div className="flex flex-col lg:flex-row gap-6 sm:gap-8">
           {/* Cart Items */}
           <div className="flex-1 space-y-4 sm:space-y-6">
-            {cart.map(item => (
+            {cart.map((item) => (
               <div
                 key={item.id}
                 className="flex flex-wrap sm:flex-nowrap items-center bg-white rounded-2xl shadow p-4 text-sm font-semibold text-gray-900 w-full"
@@ -75,7 +80,9 @@ function App() {
                   className="w-20 h-20 object-cover rounded-xl flex-shrink-0 mb-3 sm:mb-0"
                 />
                 <div className="ml-0 sm:ml-4 flex-1 min-w-[150px]">
-                  <h2 className="font-semibold text-base break-words">{item.name}</h2>
+                  <h2 className="font-semibold text-base break-words">
+                    {item.name}
+                  </h2>
                   <p className="text-sm text-gray-600">Size: {item.size}</p>
                   <p className="text-sm text-gray-600">Color: {item.color}</p>
                   <p className="font-bold mt-2">${item.price}</p>
@@ -128,14 +135,18 @@ function App() {
             </div>
 
             {/* Promo Code */}
-            
+
             <div className="relative mt-4">
-            <input type="text" placeholder="Add promo code" className="w-full border rounded-full px-3 py-3 text-sm focus:outline-none"/>
-            <button className="absolute right-1 top-1 bottom-1 bg-black text-white px-4 text-sm hover:bg-gray-800 rounded-full">
-              Apply
-            </button>
-</div>
-  
+              <input
+                type="text"
+                placeholder="Add promo code"
+                className="w-full border rounded-full px-3 py-3 text-sm focus:outline-none"
+              />
+              <button className="absolute right-1 top-1 bottom-1 bg-black text-white px-4 text-sm hover:bg-gray-800 rounded-full">
+                Apply
+              </button>
+            </div>
+
             <button className="w-full bg-black text-white py-3 rounded-full hover:bg-gray-800 flex items-center justify-center gap-2">
               Go to Checkout →
             </button>
@@ -145,6 +156,6 @@ function App() {
       <Footer />
     </div>
   );
-}
+};
 
-export default App;
+export default Chat;
