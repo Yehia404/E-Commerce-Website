@@ -60,12 +60,12 @@ const Register = () => {
   return (
     <div>
       <Navbar />
-      <div className="flex min-h-screen">
+      <div className="flex flex-col md:flex-row min-h-screen">
         {/* Left Side - Form */}
-        <div className="w-1/2 bg-white flex flex-col justify-center items-center p-10">
+        <div className="w-full md:w-1/2 bg-white flex flex-col justify-center items-center px-6 py-10">
           <h2 className="text-2xl font-bold mb-6">Register</h2>
 
-          <form onSubmit={handleSubmit} className="w-2/3">
+          <form onSubmit={handleSubmit} className="w-full max-w-md">
             {/* First Name */}
             <div className="mb-4">
               <label className="block text-gray-700 text-sm mb-2">
@@ -150,7 +150,7 @@ const Register = () => {
             {/* Register Button */}
             <button
               type="submit"
-              className="bg-black text-white px-12 py-2 rounded-full"
+              className="bg-black text-white w-full py-2 rounded-full mt-4"
             >
               Register
             </button>
@@ -165,13 +165,13 @@ const Register = () => {
           </p>
         </div>
 
-        {/* Right Side - Image */}
-        <div className="w-1/2 bg-black flex justify-center items-center">
+        {/* Right Side - Image / Branding */}
+        <div className="w-full md:w-1/2 bg-black flex justify-center items-center py-10">
           <h1
-            className="text-9xl text-white tracking-widest"
+            className="text-6xl md:text-9xl text-white tracking-widest text-center"
             style={{ fontFamily: "Dancing Script, cursive", fontWeight: "700" }}
           >
-            Vibewear
+            VibeWear
           </h1>
         </div>
       </div>

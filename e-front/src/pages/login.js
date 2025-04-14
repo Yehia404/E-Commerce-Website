@@ -18,8 +18,8 @@ const Login = () => {
 
   const validateForm = () => {
     const newErrors = {};
-
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
     if (!emailRegex.test(formData.email)) {
       newErrors.email = "Enter a valid email address.";
     }
@@ -36,6 +36,7 @@ const Login = () => {
     e.preventDefault();
     if (validateForm()) {
       console.log("Logging in:", formData);
+      // handle actual login logic here
     } else {
       console.log("Validation failed.");
     }
@@ -44,12 +45,12 @@ const Login = () => {
   return (
     <div>
       <Navbar />
-      <div className="flex min-h-screen">
+      <div className="flex flex-col md:flex-row min-h-screen">
         {/* Left Side - Form */}
-        <div className="w-1/2 bg-white flex flex-col justify-center items-center p-10">
+        <div className="w-full md:w-1/2 bg-white flex flex-col justify-center items-center px-6 py-10">
           <h2 className="text-2xl font-bold mb-6">Login</h2>
 
-          <form className="w-2/3" onSubmit={handleSubmit}>
+          <form className="w-full max-w-md" onSubmit={handleSubmit}>
             {/* Email */}
             <div className="mb-4">
               <label className="block text-gray-700 text-sm mb-2">
@@ -89,7 +90,7 @@ const Login = () => {
             {/* Login Button */}
             <button
               type="submit"
-              className="bg-black text-white px-12 py-2 rounded-full"
+              className="bg-black text-white w-full py-2 rounded-full"
             >
               Login
             </button>
@@ -97,7 +98,7 @@ const Login = () => {
 
           {/* Sign up link */}
           <p className="text-sm text-gray-600 mt-4">
-            Don't have an account?{" "}
+            Don&apos;t have an account?{" "}
             <Link to="/register" className="text-blue-700 hover:underline">
               Sign up
             </Link>
@@ -105,15 +106,15 @@ const Login = () => {
         </div>
 
         {/* Right Side - Branding */}
-        <div className="w-1/2 bg-black flex justify-center items-center">
+        <div className="w-full md:w-1/2 bg-black flex justify-center items-center py-10">
           <h1
-            className="text-9xl text-white tracking-widest"
+            className="text-6xl md:text-9xl text-white tracking-widest text-center"
             style={{
               fontFamily: "Dancing Script, cursive",
               fontWeight: "700",
             }}
           >
-            Vibewear
+            VibeWear
           </h1>
         </div>
       </div>

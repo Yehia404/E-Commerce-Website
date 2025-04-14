@@ -21,7 +21,7 @@ const Navbar = () => {
     <>
       {/* Navbar */}
       <nav className="flex items-center justify-between p-6 shadow-md relative z-10">
-        {/* Hamburger Menu Icon */}
+        {/* Hamburger Menu Icon (Visible on all screen sizes) */}
         <Button
           className="text-2xl"
           icon={<MenuOutlined />}
@@ -40,10 +40,10 @@ const Navbar = () => {
           VibeWear
         </Link>
 
-        {/* Search + Icons */}
+        {/* Search + Icons*/}
         <div className="flex items-center gap-6">
-          {/* Search Wrapper */}
-          <div className="relative">
+          {/* Search Bar */}
+          <div className="relative hidden lg:block">
             <Input
               placeholder="Search for products..."
               prefix={<FaSearch className="text-gray-500" />}
@@ -51,16 +51,19 @@ const Navbar = () => {
             />
           </div>
 
+          {/* User Icon */}
           <Link to="/login" className="text-xl">
             <FaUser />
           </Link>
 
-          <button className="text-xl">
+          {/* Cart Icon */}
+          <Link to="/cart" className="text-xl">
             <FaShoppingCart />
-          </button>
+          </Link>
         </div>
       </nav>
 
+      {/* Drawer Menu*/}
       <Drawer
         placement="left"
         closable={false}
@@ -81,6 +84,15 @@ const Navbar = () => {
           <li className="cursor-pointer hover:bg-gray-300 p-2 rounded">
             <Link to="/brands">Women</Link>
           </li>
+
+          {/* Search Bar Inside the Drawer*/}
+          <div className="mt-4 lg:hidden">
+            <Input
+              placeholder="Search for products..."
+              prefix={<FaSearch className="text-gray-500" />}
+              className="w-full rounded-lg border border-gray-300"
+            />
+          </div>
         </ul>
       </Drawer>
     </>
