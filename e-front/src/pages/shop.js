@@ -63,6 +63,8 @@ const Shop = () => {
   const [selectedSize, setSelectedSize] = useState(null);
   const [selectedStyle, setSelectedStyle] = useState([]);
   const [showFilters, setShowFilters] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const productsPerPage = 4;
 
   const handleSizeClick = (size) => {
     setSelectedSize(size === selectedSize ? null : size);
@@ -90,6 +92,12 @@ const Shop = () => {
         )
     )
     .sort((a, b) => b.price - a.price);
+
+  const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
+  const paginatedProducts = filteredProducts.slice(
+    (currentPage - 1) * productsPerPage,
+    currentPage * productsPerPage
+  );
 
   return (
     <div>
@@ -123,7 +131,7 @@ const Shop = () => {
           {/* Product Grid */}
           <div className="flex-1 w-full">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredProducts.map((product) => (
+              {paginatedProducts.map((product) => (
                 <div key={product.id} className="group">
                   <div className="w-full pb-[100%] relative mb-4">
                     <div className="absolute top-0 left-0 w-full h-full bg-gray-300 rounded-lg" />
@@ -167,6 +175,39 @@ const Shop = () => {
               ))}
             </div>
           </div>
+        </div>
+
+        {/* Pagination Controls */}
+        <div className="flex justify-center mt-8 space-x-2">
+          <button
+            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+            className="px-3 py-1 rounded border bg-white disabled:opacity-50"
+          >
+            ←
+          </button>
+
+          {Array.from({ length: totalPages }, (_, index) => (
+            <button
+              key={index + 1}
+              onClick={() => setCurrentPage(index + 1)}
+              className={`px-3 py-1 rounded border ${
+                currentPage === index + 1 ? "bg-black text-white" : "bg-white"
+              }`}
+            >
+              {index + 1}
+            </button>
+          ))}
+
+          <button
+            onClick={() =>
+              setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+            }
+            disabled={currentPage === totalPages}
+            className="px-3 py-1 rounded border bg-white disabled:opacity-50"
+          >
+            →
+          </button>
         </div>
       </div>
 
