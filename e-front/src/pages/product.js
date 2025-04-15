@@ -1,4 +1,3 @@
-// src/pages/Product.jsx
 import React, { useState } from "react";
 import Navbar from "../components/navbar";
 import Footer from "../components/footer";
@@ -31,6 +30,17 @@ const Product = () => {
   const [quantity, setQuantity] = useState(1);
   const [selectedSize, setSelectedSize] = useState(null);
   const [activeTab, setActiveTab] = useState("details");
+
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [reviewInput, setReviewInput] = useState({
+    user: "",
+    comment: "",
+    rating: 5,
+  });
+  const [reviewErrors, setReviewErrors] = useState({
+    user: "",
+    comment: "",
+  });
 
   const increaseQty = () => {
     if (quantity < 3) setQuantity(quantity + 1);
@@ -68,6 +78,43 @@ const Product = () => {
   const lowStockThreshold = 10;
   const isLowStock = totalStock < lowStockThreshold;
 
+  const handleReviewSubmit = (e) => {
+    e.preventDefault();
+    let errors = { user: "", comment: "" };
+
+    // Validate inputs
+    if (!reviewInput.user) {
+      errors.user = "Name is required.";
+    }
+    if (!reviewInput.comment) {
+      errors.comment = "Review comment is required.";
+    }
+
+    // If there are errors, don't submit the form
+    if (errors.user || errors.comment) {
+      setReviewErrors(errors);
+      return;
+    }
+
+    // Submit the review
+    productData.reviews.push(reviewInput);
+    const newAvgRating =
+      productData.reviews.reduce((acc, r) => acc + r.rating, 0) /
+      productData.reviews.length;
+    setShowReviewForm(false); // Close the modal
+    setReviewInput({
+      user: "",
+      comment: "",
+      rating: 5,
+    });
+    setReviewErrors({
+      user: "",
+      comment: "",
+    }); // Reset error messages
+    alert("Review submitted!");
+    console.log("New Avg Rating:", newAvgRating.toFixed(2));
+  };
+
   return (
     <div>
       <Navbar />
@@ -82,7 +129,7 @@ const Product = () => {
                 alt={`Thumbnail ${i}`}
                 className={`w-16 h-16 object-cover cursor-pointer border ${
                   selectedImage === img ? "border-black" : "border-gray-300"
-                }`}
+                } sm:w-20 sm:h-20 md:w-24 md:h-24 lg:w-28 lg:h-28`}
                 onClick={() => setSelectedImage(img)}
               />
             ))}
@@ -90,7 +137,7 @@ const Product = () => {
           <img
             src={selectedImage}
             alt="Selected"
-            className="w-[400px] h-[400px] object-cover rounded-lg"
+            className="w-full sm:w-[300px] md:w-[350px] lg:w-[400px] lg:h-[400px] h-auto object-cover rounded-lg"
           />
         </div>
 
@@ -198,6 +245,7 @@ const Product = () => {
               )}
               {activeTab === "reviews" && (
                 <div className="space-y-4">
+                  {/* Display Reviews */}
                   {productData.reviews.map((review, i) => (
                     <div key={i} className="border-b pb-2">
                       <p className="font-semibold">{review.user}</p>
@@ -209,13 +257,107 @@ const Product = () => {
                       <p>{review.comment}</p>
                     </div>
                   ))}
+
+                  {/* Write Review Button */}
+                  <div className="flex justify-end">
+                    <button
+                      onClick={() => setShowReviewForm(true)}
+                      className="mt-4 text-sm text-white bg-black px-4 py-2 rounded-md hover:bg-gray-800"
+                    >
+                      Write a Review
+                    </button>
+                  </div>
+
+                  {/* Modal for Review Form */}
+                  {showReviewForm && (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                      <div className="bg-white rounded-lg p-6 w-full max-w-md relative shadow-lg">
+                        {/* Close Button */}
+                        <button
+                          onClick={() => setShowReviewForm(false)}
+                          className="absolute top-2 right-2 text-gray-600 hover:text-black text-xl"
+                        >
+                          &times;
+                        </button>
+
+                        <h3 className="text-lg font-semibold mb-4">
+                          Write a Review
+                        </h3>
+
+                        <form
+                          onSubmit={handleReviewSubmit}
+                          className="space-y-4"
+                        >
+                          <input
+                            type="text"
+                            placeholder="Your Name"
+                            value={reviewInput.user}
+                            onChange={(e) =>
+                              setReviewInput({
+                                ...reviewInput,
+                                user: e.target.value,
+                              })
+                            }
+                            className="w-full border rounded-md p-2"
+                          />
+                          {/* Error message for user */}
+                          {reviewErrors.user && (
+                            <p className="text-red-500 text-sm">
+                              {reviewErrors.user}
+                            </p>
+                          )}
+
+                          <textarea
+                            placeholder="Your Review"
+                            value={reviewInput.comment}
+                            onChange={(e) =>
+                              setReviewInput({
+                                ...reviewInput,
+                                comment: e.target.value,
+                              })
+                            }
+                            className="w-full border rounded-md p-2"
+                          />
+                          {/* Error message for comment */}
+                          {reviewErrors.comment && (
+                            <p className="text-red-500 text-sm">
+                              {reviewErrors.comment}
+                            </p>
+                          )}
+
+                          <select
+                            value={reviewInput.rating}
+                            onChange={(e) =>
+                              setReviewInput({
+                                ...reviewInput,
+                                rating: e.target.value,
+                              })
+                            }
+                            className="w-full border rounded-md p-2"
+                          >
+                            {[5, 4, 3, 2, 1].map((r) => (
+                              <option key={r} value={r}>
+                                {r} Star{r > 1 ? "s" : ""}
+                              </option>
+                            ))}
+                          </select>
+
+                          <button
+                            type="submit"
+                            className="w-full mt-4 py-2 text-white bg-black rounded-md"
+                          >
+                            Submit Review
+                          </button>
+                        </form>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
           </div>
         </div>
       </div>
-
       <Footer />
     </div>
   );

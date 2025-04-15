@@ -72,21 +72,31 @@ const Navbar = () => {
         width={250}
       >
         <ul className="flex flex-col gap-6 text-lg">
-          <li className="cursor-pointer hover:bg-gray-300 p-2 rounded">
-            <Link to="/home">Home</Link>
-          </li>
-          <li className="cursor-pointer hover:bg-gray-300 p-2 rounded">
-            <Link to="/shop">Shop All</Link>
-          </li>
-          <li className="cursor-pointer hover:bg-gray-300 p-2 rounded">
-            <Link to="/product">Product</Link>
-          </li>
-          <li className="cursor-pointer hover:bg-gray-300 p-2 rounded">
-            <Link to="/new-arrivals">Men</Link>
-          </li>
-          <li className="cursor-pointer hover:bg-gray-300 p-2 rounded">
-            <Link to="/brands">Women</Link>
-          </li>
+          <Link to="/home">
+            <li className="cursor-pointer hover:bg-gray-300 p-2 rounded">
+              Home
+            </li>
+          </Link>
+          <Link to="/shop">
+            <li className="cursor-pointer hover:bg-gray-300 p-2 rounded">
+              Shop All
+            </li>
+          </Link>
+          <Link to="/product">
+            <li className="cursor-pointer hover:bg-gray-300 p-2 rounded">
+              Product
+            </li>
+          </Link>
+          <Link to="/new-arrivals">
+            <li className="cursor-pointer hover:bg-gray-300 p-2 rounded">
+              Men
+            </li>
+          </Link>
+          <Link to="/brands">
+            <li className="cursor-pointer hover:bg-gray-300 p-2 rounded">
+              Women
+            </li>
+          </Link>
 
           {/* Search Bar Inside the Drawer*/}
           <div className="mt-4 lg:hidden">
