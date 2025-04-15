@@ -7,12 +7,13 @@ import { MenuOutlined } from "@ant-design/icons";
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
 
-  // Toggle the side menu
+  // Simulate admin state (replace with real auth context or props)
+  const isAdmin = true; // Change based on your actual logic
+
   const toggleMenu = () => {
     setIsOpen(!isOpen);
   };
 
-  // Close menu when clicked outside
   const closeMenu = () => {
     setIsOpen(false);
   };
@@ -21,7 +22,7 @@ const Navbar = () => {
     <>
       {/* Navbar */}
       <nav className="flex items-center justify-between p-6 shadow-md relative z-10">
-        {/* Hamburger Menu Icon (Visible on all screen sizes) */}
+        {/* Hamburger Menu */}
         <Button
           className="text-2xl"
           icon={<MenuOutlined />}
@@ -33,16 +34,14 @@ const Navbar = () => {
         <Link
           to="/home"
           className="absolute left-1/2 transform -translate-x-1/2 text-5xl font-extrabold"
-          style={{
-            fontFamily: "Dancing Script, cursive",
-          }}
+          style={{ fontFamily: "Dancing Script, cursive" }}
         >
           VibeWear
         </Link>
 
-        {/* Search + Icons*/}
+        {/* Right Section: Search + Icons */}
         <div className="flex items-center gap-6">
-          {/* Search Bar */}
+          {/* Search Bar (Hidden on small screens) */}
           <div className="relative hidden lg:block">
             <Input
               placeholder="Search for products..."
@@ -50,6 +49,16 @@ const Navbar = () => {
               className="lg:w-64 rounded-full bg-gray-100 text-sm border border-gray-300"
             />
           </div>
+
+          {/* Admin Panel Button (Visible if admin only, hidden on small screens) */}
+          {isAdmin && (
+            <Link
+              to="/admin"
+              className="hidden lg:inline-block bg-black text-white text-sm px-4 py-1 rounded-full hover:bg-gray-800 transition"
+            >
+              Admin Panel
+            </Link>
+          )}
 
           {/* User Icon */}
           <Link to="/login" className="text-xl">
@@ -63,7 +72,7 @@ const Navbar = () => {
         </div>
       </nav>
 
-      {/* Drawer Menu*/}
+      {/* Drawer for smaller screens */}
       <Drawer
         placement="left"
         closable={false}
@@ -98,7 +107,16 @@ const Navbar = () => {
             </li>
           </Link>
 
-          {/* Search Bar Inside the Drawer*/}
+          {/* Admin Panel (Only visible if isAdmin) */}
+          {isAdmin && (
+            <Link to="/admin">
+              <li className="cursor-pointer hover:bg-gray-300 hover:text-black p-2 rounded font-semibold bg-black text-white">
+                Admin Panel
+              </li>
+            </Link>
+          )}
+
+          {/* Search Bar in Drawer (only for mobile) */}
           <div className="mt-4 lg:hidden">
             <Input
               placeholder="Search for products..."

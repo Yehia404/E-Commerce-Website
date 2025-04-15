@@ -6,6 +6,7 @@ import Shop from "./pages/shop";
 import Cart from "./pages/cart";
 import Product from "./pages/product";
 import Checkout from "./pages/checkout";
+import Admin from "./pages/admin";
 import {
   BrowserRouter as Router,
   Routes,
@@ -25,6 +26,7 @@ function App() {
         <Route path="/cart" element={<Cart />} />
         <Route path="/product" element={<Product />} />
         <Route path="/checkout" element={<Checkout />} />
+        <Route path="/admin" element={<Admin />} />
       </Routes>
     </Router>
   );
