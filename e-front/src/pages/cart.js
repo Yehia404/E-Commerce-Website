@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { FiTrash2 } from "react-icons/fi";
 import Navbar from "../components/navbar";
 import Footer from "../components/footer";
+import { Link } from "react-router-dom";
 
 const productsData = [
   {
@@ -147,9 +148,12 @@ const Chat = () => {
               </button>
             </div>
 
-            <button className="w-full bg-black text-white py-3 rounded-full hover:bg-gray-800 flex items-center justify-center gap-2">
+            <Link
+              to="/Checkout"
+              className="w-full bg-black text-white py-3 rounded-full hover:bg-gray-800 flex items-center justify-center gap-2"
+            >
               Go to Checkout →
-            </button>
+            </Link>
           </div>
         </div>
       </div>
