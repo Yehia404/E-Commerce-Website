@@ -1,3 +1,4 @@
+// src/pages/Product.jsx
 import React, { useState } from "react";
 import Navbar from "../components/navbar";
 import Footer from "../components/footer";
@@ -9,10 +10,10 @@ const productData = {
   name: "Gradient Graphic T-shirt",
   description: "A trendy t-shirt perfect for parties and casual wear.",
   price: 145,
-  discount: 20, // percent
+  discount: 20,
   images: [img1, img2, img3],
   sizes: [
-    { size: "XS", stock: 2 }, // changed from boolean to number
+    { size: "XS", stock: 2 },
     { size: "S", stock: 3 },
     { size: "M", stock: 1 },
     { size: "L", stock: 0 },
@@ -31,8 +32,26 @@ const Product = () => {
   const [selectedSize, setSelectedSize] = useState(null);
   const [activeTab, setActiveTab] = useState("details");
 
-  const increaseQty = () => setQuantity(quantity + 1);
+  const increaseQty = () => {
+    if (quantity < 3) setQuantity(quantity + 1);
+  };
+
   const decreaseQty = () => setQuantity(quantity > 1 ? quantity - 1 : 1);
+
+  const handleAddToCart = () => {
+    if (!selectedSize) {
+      alert("Please select a size.");
+      return;
+    }
+
+    console.log("Added to cart:", {
+      product: productData.name,
+      size: selectedSize,
+      quantity,
+    });
+
+    alert(`Added ${quantity} item(s) of size ${selectedSize} to cart!`);
+  };
 
   const discountedPrice = productData.discount
     ? productData.price - (productData.price * productData.discount) / 100
@@ -42,20 +61,16 @@ const Product = () => {
     productData.reviews.reduce((acc, r) => acc + r.rating, 0) /
     productData.reviews.length;
 
-  // Calculate total stock across all sizes
   const totalStock = productData.sizes.reduce(
     (acc, size) => acc + size.stock,
     0
   );
-
-  // Low stock threshold
-  const lowStockThreshold = 10; // Set your threshold value here
+  const lowStockThreshold = 10;
   const isLowStock = totalStock < lowStockThreshold;
 
   return (
     <div>
       <Navbar />
-
       <div className="max-w-7xl mx-auto px-4 py-8 flex flex-col md:flex-row gap-10">
         {/* Image Section */}
         <div className="flex gap-4">
@@ -84,7 +99,6 @@ const Product = () => {
           <h2 className="text-2xl font-bold">{productData.name}</h2>
           <p className="text-gray-600">{productData.description}</p>
 
-          {/* Average Rating under description */}
           <div className="flex items-center gap-2 mt-2">
             <div className="text-yellow-500 text-lg leading-none">
               {"★".repeat(Math.round(avgRating))}
@@ -95,7 +109,6 @@ const Product = () => {
             </span>
           </div>
 
-          {/* Pricing with Discount */}
           <p className="text-xl font-semibold text-black flex items-center gap-3">
             {productData.discount > 0 && (
               <span className="line-through text-gray-500">
@@ -110,7 +123,6 @@ const Product = () => {
             )}
           </p>
 
-          {/* Size Selector with Low Stock Bubble */}
           <div className="flex items-center gap-4 flex-wrap">
             <span className="font-medium">Size:</span>
             {productData.sizes.map(({ size, stock }) => (
@@ -131,8 +143,6 @@ const Product = () => {
                 {size}
               </button>
             ))}
-
-            {/* Low Stock Bubble beside sizes */}
             {isLowStock && (
               <div className="ml-4 p-2 text-red-500 bg-red-100 rounded-full text-xs font-semibold">
                 Low Stock
@@ -140,7 +150,6 @@ const Product = () => {
             )}
           </div>
 
-          {/* Quantity */}
           <div className="flex items-center gap-4">
             <span className="font-medium">Quantity:</span>
             <button
@@ -153,17 +162,19 @@ const Product = () => {
             <button
               onClick={increaseQty}
               className="px-3 py-1 border rounded-md text-lg"
+              disabled={quantity === 3}
             >
               +
             </button>
           </div>
 
-          {/* Add to Cart */}
-          <button className="px-6 py-3 bg-black text-white rounded-md">
+          <button
+            onClick={handleAddToCart}
+            className="px-6 py-3 bg-black text-white rounded-md"
+          >
             Add to Cart
           </button>
 
-          {/* Tabs */}
           <div className="mt-8">
             <div className="flex border-b mb-4">
               {["details", "reviews"].map((tab) => (

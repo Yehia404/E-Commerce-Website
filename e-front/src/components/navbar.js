@@ -73,6 +73,9 @@ const Navbar = () => {
       >
         <ul className="flex flex-col gap-6 text-lg">
           <li className="cursor-pointer hover:bg-gray-300 p-2 rounded">
+            <Link to="/home">Home</Link>
+          </li>
+          <li className="cursor-pointer hover:bg-gray-300 p-2 rounded">
             <Link to="/shop">Shop All</Link>
           </li>
           <li className="cursor-pointer hover:bg-gray-300 p-2 rounded">
