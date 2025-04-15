@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Modal, Table, Input, Button as AntButton, Select, message } from "antd";
+import { Modal, Table, Input, Button, Select, message } from "antd";
 import { MinusCircleOutlined, PlusOutlined } from "@ant-design/icons";
 
 const { Option } = Select;
@@ -8,9 +8,7 @@ const initialOrders = [
   {
     id: 1,
     orderNumber: "ORD-001",
-    items: [
-      { product: "T-shirt", quantity: 2, size: "M" },
-    ],
+    items: [{ product: "T-shirt", quantity: 2, size: "M" }],
     price: "$40",
     buyer: "Alice Smith",
     name: "Alice Smith",
@@ -21,9 +19,7 @@ const initialOrders = [
   {
     id: 2,
     orderNumber: "ORD-002",
-    items: [
-      { product: "Sneakers", quantity: 1, size: "10" },
-    ],
+    items: [{ product: "Sneakers", quantity: 1, size: "L" }],
     price: "$70",
     buyer: "John Doe",
     name: "John Doe",
@@ -34,9 +30,7 @@ const initialOrders = [
   {
     id: 3,
     orderNumber: "ORD-003",
-    items: [
-      { product: "Hoodie", quantity: 1, size: "L" },
-    ],
+    items: [{ product: "Hoodie", quantity: 1, size: "L" }],
     price: "$50",
     buyer: "Jane Williams",
     name: "Jane Williams",
@@ -47,9 +41,7 @@ const initialOrders = [
   {
     id: 4,
     orderNumber: "ORD-004",
-    items: [
-      { product: "Jacket", quantity: 1, size: "L" },
-    ],
+    items: [{ product: "Jacket", quantity: 1, size: "L" }],
     price: "$80",
     buyer: "Tom Lee",
     name: "Tom Lee",
@@ -60,9 +52,7 @@ const initialOrders = [
   {
     id: 5,
     orderNumber: "ORD-005",
-    items: [
-      { product: "Jeans", quantity: 2, size: "M" },
-    ],
+    items: [{ product: "Jeans", quantity: 2, size: "M" }],
     price: "$60",
     buyer: "Sarah Brown",
     name: "Sarah Brown",
@@ -73,9 +63,7 @@ const initialOrders = [
   {
     id: 6,
     orderNumber: "ORD-006",
-    items: [
-      { product: "Shirt", quantity: 1, size: "S" },
-    ],
+    items: [{ product: "Shirt", quantity: 1, size: "S" }],
     price: "$30",
     buyer: "David Green",
     name: "David Green",
@@ -119,8 +107,18 @@ export default function OrderManagementPage() {
   };
 
   const handleConfirm = () => {
-    const requiredFields = ["orderNumber", "price", "buyer", "name", "address", "phone", "email"];
-    const hasEmptyFields = requiredFields.some((field) => !selectedOrder[field]);
+    const requiredFields = [
+      "orderNumber",
+      "price",
+      "buyer",
+      "name",
+      "address",
+      "phone",
+      "email",
+    ];
+    const hasEmptyFields = requiredFields.some(
+      (field) => !selectedOrder[field]
+    );
 
     if (hasEmptyFields) {
       message.error("Please fill in all the required fields.");
@@ -147,13 +145,18 @@ export default function OrderManagementPage() {
       title: "Order Number",
       dataIndex: "orderNumber",
       key: "orderNumber",
-      width: 120
+      width: 120,
     },
     {
       title: "Content",
       key: "content",
       render: (_, record) =>
-        record.items.map((item, i) => `${item.product} (x${item.quantity}) - Size ${item.size}`).join(", "),
+        record.items
+          .map(
+            (item, i) =>
+              `${item.product} (x${item.quantity}) - Size ${item.size}`
+          )
+          .join(", "),
     },
     {
       title: "Price",
@@ -169,16 +172,22 @@ export default function OrderManagementPage() {
       title: "Actions",
       key: "actions",
       render: (_, record) => (
-        <AntButton type="default" style={{ color: "black" }} onClick={() => handleEditClick(record)}>
+        <Button
+          type="primary"
+          className="bg-black text-white hover:text-black hover:bg-white transition duration-300"
+          onClick={() => handleEditClick(record)}
+        >
           Edit
-        </AntButton>
+        </Button>
       ),
     },
   ];
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-4">Order Management</h1>
+      <h2 className="text-3xl font-bold mb-4">Order Management</h2>
+      <br />
+
       <Table
         dataSource={orders}
         columns={columns}
@@ -201,7 +210,7 @@ export default function OrderManagementPage() {
             onChange={handleInputChange}
             placeholder="Price"
           />
-          
+
           <Input
             name="address"
             value={selectedOrder?.address || ""}
@@ -214,13 +223,17 @@ export default function OrderManagementPage() {
               <Input
                 placeholder="Product"
                 value={item.product}
-                onChange={(e) => handleItemChange(index, "product", e.target.value)}
+                onChange={(e) =>
+                  handleItemChange(index, "product", e.target.value)
+                }
               />
               <Input
                 placeholder="Quantity"
                 type="number"
                 value={item.quantity}
-                onChange={(e) => handleItemChange(index, "quantity", e.target.value)}
+                onChange={(e) =>
+                  handleItemChange(index, "quantity", e.target.value)
+                }
               />
               <Select
                 value={item.size}
@@ -233,12 +246,15 @@ export default function OrderManagementPage() {
                 <Option value="L">L</Option>
                 <Option value="XL">XL</Option>
               </Select>
-              <MinusCircleOutlined onClick={() => removeItem(index)} className="text-red-500 cursor-pointer" />
+              <MinusCircleOutlined
+                onClick={() => removeItem(index)}
+                className="text-red-500 cursor-pointer"
+              />
             </div>
           ))}
-          <AntButton type="dashed" onClick={addItem} block icon={<PlusOutlined />}>
+          <Button type="dashed" onClick={addItem} block icon={<PlusOutlined />}>
             Add Item
-          </AntButton>
+          </Button>
         </div>
       </Modal>
     </div>

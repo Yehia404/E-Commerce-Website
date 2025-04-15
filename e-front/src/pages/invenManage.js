@@ -160,6 +160,7 @@ const InvenManage = () => {
       <Table
         columns={columns}
         dataSource={products}
+        className="bg-white rounded shadow"
         pagination={{
           current: currentPage,
           pageSize: 5,
