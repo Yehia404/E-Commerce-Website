@@ -17,6 +17,7 @@ const initialOrders = [
     address: "123 Main St",
     phone: "123-456-7890",
     email: "alice@example.com",
+    status: "Shipped",
   },
   {
     id: 2,
@@ -30,6 +31,7 @@ const initialOrders = [
     address: "456 Oak St",
     phone: "987-654-3210",
     email: "john@example.com",
+    status: "Pending",
   },
   {
     id: 3,
@@ -43,6 +45,7 @@ const initialOrders = [
     address: "789 Pine St",
     phone: "555-555-5555",
     email: "jane@example.com",
+    status: "Processing",
   },
   {
     id: 4,
@@ -56,6 +59,7 @@ const initialOrders = [
     address: "123 Maple St",
     phone: "555-123-4567",
     email: "tom@example.com",
+    status: "Delivered",
   },
   {
     id: 5,
@@ -69,6 +73,7 @@ const initialOrders = [
     address: "456 Birch St",
     phone: "555-987-6543",
     email: "sarah@example.com",
+    status: "Cancelled",
   },
   {
     id: 6,
@@ -82,6 +87,7 @@ const initialOrders = [
     address: "789 Oak St",
     phone: "555-555-1234",
     email: "david@example.com",
+    status: "Pending",
   },
 ];
 
@@ -174,6 +180,23 @@ export default function OrderManagementPage() {
         </AntButton>
       ),
     },
+    {
+      title: "Status",
+      dataIndex: "status",
+      key: "status",
+      render: (text) => {
+        let color;
+        if (text === "Delivered") color = "green";
+        else if (text === "Cancelled") color = "red";
+        else color = "orange";
+    
+        return (
+          <span style={{ color, fontWeight: "bold" }}>
+            {text}
+          </span>
+        );
+      },
+    },
   ];
 
   return (
@@ -208,6 +231,20 @@ export default function OrderManagementPage() {
             onChange={handleInputChange}
             placeholder="Address"
           />
+          <Select
+  value={selectedOrder?.status}
+  onChange={(value) =>
+    setSelectedOrder((prev) => ({ ...prev, status: value }))
+  }
+  placeholder="Select Status"
+  className="w-full"
+>
+  <Option value="Pending">Pending</Option>
+  <Option value="Processing">Processing</Option>
+  <Option value="Shipped">Shipped</Option>
+  <Option value="Delivered">Delivered</Option>
+  <Option value="Cancelled">Cancelled</Option>
+</Select>
 
           {selectedOrder?.items.map((item, index) => (
             <div key={index} className="flex items-center space-x-2">
@@ -233,6 +270,7 @@ export default function OrderManagementPage() {
                 <Option value="L">L</Option>
                 <Option value="XL">XL</Option>
               </Select>
+              
               <MinusCircleOutlined onClick={() => removeItem(index)} className="text-red-500 cursor-pointer" />
             </div>
           ))}
