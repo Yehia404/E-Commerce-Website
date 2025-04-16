@@ -1,14 +1,16 @@
 import React, { useState } from "react";
 import { FaUser, FaShoppingCart, FaSearch } from "react-icons/fa";
-import { Link } from "react-router-dom";
-import { Drawer, Button, Input } from "antd";
+import { Link, useNavigate } from "react-router-dom";
+import { Drawer, Button, Input, Dropdown, Menu } from "antd";
 import { MenuOutlined } from "@ant-design/icons";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const navigate = useNavigate();
 
-  // Simulate admin state (replace with real auth context or props)
+  // Simulate auth state
   const isAdmin = true; // Change based on your actual logic
+  const isLoggedIn = true; // Replace this with your auth state
 
   const toggleMenu = () => {
     setIsOpen(!isOpen);
@@ -17,6 +19,28 @@ const Navbar = () => {
   const closeMenu = () => {
     setIsOpen(false);
   };
+
+  const handleIconClick = () => {
+    navigate(isLoggedIn ? "/profile" : "/login");
+  };
+
+  const handleLogout = () => {
+    console.log("Logging out...");
+    // Your real logout logic here
+    // Example: localStorage.removeItem("token");
+    navigate("/login");
+  };
+
+  const dropdownMenu = (
+    <Menu>
+      <Menu.Item key="profile" onClick={() => navigate("/profile")}>
+        Profile
+      </Menu.Item>
+      <Menu.Item key="logout" onClick={handleLogout}>
+        Logout
+      </Menu.Item>
+    </Menu>
+  );
 
   return (
     <>
@@ -50,7 +74,7 @@ const Navbar = () => {
             />
           </div>
 
-          {/* Admin Panel Button (Visible if admin only, hidden on small screens) */}
+          {/* Admin Panel Button */}
           {isAdmin && (
             <Link
               to="/admin"
@@ -60,10 +84,15 @@ const Navbar = () => {
             </Link>
           )}
 
-          {/* User Icon */}
-          <Link to="/login" className="text-xl">
-            <FaUser />
-          </Link>
+          {/* User Icon with Dropdown */}
+          <Dropdown overlay={dropdownMenu} trigger={["hover"]}>
+            <div
+              onClick={handleIconClick}
+              className="text-xl cursor-pointer flex items-center"
+            >
+              <FaUser />
+            </div>
+          </Dropdown>
 
           {/* Cart Icon */}
           <Link to="/cart" className="text-xl">
@@ -72,7 +101,7 @@ const Navbar = () => {
         </div>
       </nav>
 
-      {/* Drawer for smaller screens */}
+      {/* Drawer for small screens */}
       <Drawer
         placement="left"
         closable={false}
@@ -107,7 +136,7 @@ const Navbar = () => {
             </li>
           </Link>
 
-          {/* Admin Panel (Only visible if isAdmin) */}
+          {/* Admin Panel */}
           {isAdmin && (
             <Link to="/admin">
               <li className="cursor-pointer hover:bg-gray-300 hover:text-black p-2 rounded font-semibold bg-black text-white">
@@ -116,7 +145,7 @@ const Navbar = () => {
             </Link>
           )}
 
-          {/* Search Bar in Drawer (only for mobile) */}
+          {/* Search in Drawer (mobile only) */}
           <div className="mt-4 lg:hidden">
             <Input
               placeholder="Search for products..."

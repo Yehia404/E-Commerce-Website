@@ -17,14 +17,17 @@ const Admin = () => {
           <Route
             path="/"
             element={
-              <div>
-                <h2 className="text-3xl font-bold mb-4">
+              <div className="flex flex-col items-center justify-center h-full text-center">
+                <h2
+                  className="text-7xl font-bold mb-4"
+                  style={{ fontFamily: "Dancing Script, cursive" }}
+                >
                   Welcome to Admin Panel
                 </h2>
-                <p>Select an option from the left menu to manage the store.</p>
               </div>
             }
           />
+
           <Route path="/prodManage" element={<ProdManage />} />
           <Route path="/orderManage" element={<OrderManage />} />
           <Route path="/invenManage" element={<InvenManage />} />

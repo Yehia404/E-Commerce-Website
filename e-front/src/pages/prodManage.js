@@ -1,6 +1,5 @@
 import React, { useState } from "react";
-import { Modal, Button, Table, Tag } from "antd";
-
+import { Modal, Table, Tag } from "antd";
 
 const dummyProducts = [
   {
@@ -13,38 +12,6 @@ const dummyProducts = [
   },
   {
     key: "2",
-    name: "Denim Jacket",
-    description: "Classic and rugged. Ideal for winter layering.",
-    price: 220,
-    sizes: ["S", "M", "L"],
-    details: "High-quality denim with fleece lining.",
-  },
-  {
-    key: "3",
-    name: "Denim Jacket",
-    description: "Classic and rugged. Ideal for winter layering.",
-    price: 220,
-    sizes: ["S", "M", "L"],
-    details: "High-quality denim with fleece lining.",
-  },
-  {
-    key: "4",
-    name: "Denim Jacket",
-    description: "Classic and rugged. Ideal for winter layering.",
-    price: 220,
-    sizes: ["S", "M", "L"],
-    details: "High-quality denim with fleece lining.",
-  },
-  {
-    key: "5",
-    name: "Denim Jacket",
-    description: "Classic and rugged. Ideal for winter layering.",
-    price: 220,
-    sizes: ["S", "M", "L"],
-    details: "High-quality denim with fleece lining.",
-  },
-  {
-    key: "6",
     name: "Denim Jacket",
     description: "Classic and rugged. Ideal for winter layering.",
     price: 220,
@@ -64,39 +31,69 @@ const ProdManage = () => {
     sizes: [],
     details: "",
   });
+  const [errors, setErrors] = useState({});
   const [sizeInput, setSizeInput] = useState("");
 
   const showModal = () => setIsModalVisible(true);
-  const handleCancel = () => setIsModalVisible(false);
+  const handleCancel = () => {
+    setIsModalVisible(false);
+    setErrors({});
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setProduct({ ...product, [name]: value });
   };
-  
+
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
     setProduct({ ...product, images: files });
   };
+
   const handleAddSize = () => {
-    if (sizeInput.trim()) {
-      setProduct({
-        ...product,
-        sizes: [...product.sizes, { size: sizeInput }],
-      });
-      setSizeInput("");
+    const allowedSizes = ["XS", "S", "M", "L", "XL"];
+    const size = sizeInput.trim().toUpperCase();
+
+    if (size && allowedSizes.includes(size)) {
+      const alreadyAdded = product.sizes.some((s) => s.size === size);
+      if (!alreadyAdded) {
+        setProduct({
+          ...product,
+          sizes: [...product.sizes, { size }],
+        });
+      }
     }
+
+    setSizeInput("");
+  };
+
+  const validate = () => {
+    let err = {};
+    if (!product.name.trim()) err.name = "Product name is required.";
+    if (!product.description.trim())
+      err.description = "Description is required.";
+    if (!product.price || isNaN(product.price) || Number(product.price) <= 0)
+      err.price = "Valid price is required.";
+    if (!product.sizes.length) err.sizes = "At least one size is required.";
+    if (!product.details.trim()) err.details = "Details are required.";
+    return err;
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-  
+
+    const validationErrors = validate();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+
     const updatedProduct = {
       ...product,
       key: editingProduct ? editingProduct.key : Date.now(),
       sizes: product.sizes.map((s) => s.size),
     };
-  
+
     if (isEditMode) {
       const updatedList = products.map((p) =>
         p.key === editingProduct.key ? updatedProduct : p
@@ -105,8 +102,7 @@ const ProdManage = () => {
     } else {
       setProducts([...products, updatedProduct]);
     }
-  
-    // Reset everything
+
     setProduct({
       name: "",
       description: "",
@@ -115,19 +111,20 @@ const ProdManage = () => {
       sizes: [],
       details: "",
     });
+    setErrors({});
     setSizeInput("");
     setEditingProduct(null);
     setIsEditMode(false);
     setIsModalVisible(false);
   };
-  
-  const [editingProduct, setEditingProduct] = useState(null); // holds product being edited
+
+  const [editingProduct, setEditingProduct] = useState(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const handleEdit = (productToEdit) => {
     setProduct({
       ...productToEdit,
-      sizes: productToEdit.sizes.map((s) => ({ size: s })), // convert sizes back to objects
-      images: [], // don't persist images for now
+      sizes: productToEdit.sizes.map((s) => ({ size: s })),
+      images: [],
     });
     setEditingProduct(productToEdit);
     setIsEditMode(true);
@@ -188,18 +185,28 @@ const ProdManage = () => {
   ];
 
   return (
-
     <div className="p-4">
       <h2 className="text-3xl font-semibold mb-4">Product Management</h2>
-      <br/>
-      <button
-        onClick={showModal}
-        className="px-5 py-2 bg-black text-white rounded hover:bg-gray-800">
-        Add Product
-      </button>
-      <br/>
+
+      <div className="bg-white rounded shadow p-4">
+        <h2 className="text-xl font-semibold mb-4">Product Catalog</h2>
+        <Table
+          columns={columns}
+          dataSource={products}
+          pagination={{ pageSize: 4 }}
+        />
+        <div className="flex justify-end mt-4">
+          <button
+            onClick={showModal}
+            className="px-5 py-2 bg-black text-white rounded hover:bg-gray-800"
+          >
+            Add Product
+          </button>
+        </div>
+      </div>
+
       <Modal
-        title="Add New Product"
+        title={isEditMode ? "Edit Product" : "Add New Product"}
         open={isModalVisible}
         onCancel={handleCancel}
         footer={null}
@@ -214,6 +221,9 @@ const ProdManage = () => {
               onChange={handleChange}
               className="w-full mt-1 p-1 border rounded-sm"
             />
+            {errors.name && (
+              <p className="text-red-500 text-xs">{errors.name}</p>
+            )}
           </div>
 
           <div>
@@ -224,6 +234,9 @@ const ProdManage = () => {
               onChange={handleChange}
               className="w-full mt-1 p-1 border rounded-sm"
             />
+            {errors.description && (
+              <p className="text-red-500 text-xs">{errors.description}</p>
+            )}
           </div>
 
           <div>
@@ -235,6 +248,9 @@ const ProdManage = () => {
               onChange={handleChange}
               className="w-full mt-1 p-1 border rounded-sm"
             />
+            {errors.price && (
+              <p className="text-red-500 text-xs">{errors.price}</p>
+            )}
           </div>
 
           <div>
@@ -276,6 +292,9 @@ const ProdManage = () => {
                 </span>
               ))}
             </div>
+            {errors.sizes && (
+              <p className="text-red-500 text-xs">{errors.sizes}</p>
+            )}
           </div>
 
           <div>
@@ -286,26 +305,20 @@ const ProdManage = () => {
               onChange={handleChange}
               className="w-full mt-1 p-1 border rounded-sm"
             />
+            {errors.details && (
+              <p className="text-red-500 text-xs">{errors.details}</p>
+            )}
           </div>
 
           <button
             type="submit"
             className="w-full py-2 bg-black text-white rounded-sm hover:bg-gray-800"
           >
-            Save Product
+            {isEditMode ? "Update Product" : "Save Product"}
           </button>
         </form>
       </Modal>
-      <div className="p-4">
-      <h2 className="text-xl font-semibold mb-4">Product Catalog</h2>
-
-      <Table columns={columns} dataSource={products} className="bg-white rounded shadow"
-        pagination={{ pageSize: 4 }}/>
-
-      {/* Modal with form (same as before) */}
     </div>
-    </div>
-    
   );
 };
 

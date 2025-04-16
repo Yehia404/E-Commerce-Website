@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Modal, Table, Input, Button, Select, message } from "antd";
+import { Modal, Table, Input, Button, Select, message, Tag } from "antd";
 import { MinusCircleOutlined, PlusOutlined } from "@ant-design/icons";
 
 const { Option } = Select;
@@ -15,6 +15,7 @@ const initialOrders = [
     address: "123 Main St",
     phone: "123-456-7890",
     email: "alice@example.com",
+    status: "confirmed",
   },
   {
     id: 2,
@@ -26,6 +27,7 @@ const initialOrders = [
     address: "456 Oak St",
     phone: "987-654-3210",
     email: "john@example.com",
+    status: "refunded",
   },
   {
     id: 3,
@@ -37,6 +39,7 @@ const initialOrders = [
     address: "789 Pine St",
     phone: "555-555-5555",
     email: "jane@example.com",
+    status: "cancelled",
   },
   {
     id: 4,
@@ -48,6 +51,7 @@ const initialOrders = [
     address: "123 Maple St",
     phone: "555-123-4567",
     email: "tom@example.com",
+    status: "confirmed",
   },
   {
     id: 5,
@@ -59,6 +63,7 @@ const initialOrders = [
     address: "456 Birch St",
     phone: "555-987-6543",
     email: "sarah@example.com",
+    status: "cancelled",
   },
   {
     id: 6,
@@ -70,6 +75,7 @@ const initialOrders = [
     address: "789 Oak St",
     phone: "555-555-1234",
     email: "david@example.com",
+    status: "confirmed",
   },
 ];
 
@@ -140,6 +146,15 @@ export default function OrderManagementPage() {
     setIsModalOpen(false);
   };
 
+  const getStatusTag = (status) => {
+    const colorMap = {
+      confirmed: "green",
+      cancelled: "red",
+      refunded: "gold",
+    };
+    return <Tag color={colorMap[status]}>{status.toUpperCase()}</Tag>;
+  };
+
   const columns = [
     {
       title: "Order Number",
@@ -153,8 +168,7 @@ export default function OrderManagementPage() {
       render: (_, record) =>
         record.items
           .map(
-            (item, i) =>
-              `${item.product} (x${item.quantity}) - Size ${item.size}`
+            (item) => `${item.product} (x${item.quantity}) - Size ${item.size}`
           )
           .join(", "),
     },
@@ -167,6 +181,12 @@ export default function OrderManagementPage() {
       title: "Buyer",
       dataIndex: "buyer",
       key: "buyer",
+    },
+    {
+      title: "Status",
+      dataIndex: "status",
+      key: "status",
+      render: (status) => getStatusTag(status),
     },
     {
       title: "Actions",
@@ -185,7 +205,7 @@ export default function OrderManagementPage() {
 
   return (
     <div>
-      <h2 className="text-3xl font-bold mb-4">Order Management</h2>
+      <h2 className="text-3xl font-semibold mb-4">Order Management</h2>
       <br />
 
       <Table
@@ -193,7 +213,7 @@ export default function OrderManagementPage() {
         columns={columns}
         rowKey="id"
         className="bg-white rounded shadow"
-        pagination={{ pageSize: 5 }} // Set pagination to 5 orders per page
+        pagination={{ pageSize: 5 }}
       />
 
       <Modal
@@ -210,7 +230,6 @@ export default function OrderManagementPage() {
             onChange={handleInputChange}
             placeholder="Price"
           />
-
           <Input
             name="address"
             value={selectedOrder?.address || ""}
@@ -252,9 +271,28 @@ export default function OrderManagementPage() {
               />
             </div>
           ))}
+
           <Button type="dashed" onClick={addItem} block icon={<PlusOutlined />}>
             Add Item
           </Button>
+
+          <Select
+            value={selectedOrder?.status || ""}
+            onChange={(value) =>
+              setSelectedOrder((prev) => ({ ...prev, status: value }))
+            }
+            className="w-full mt-4"
+          >
+            <Option value="confirmed">
+              <span className="text-green-600 font-semibold">● Confirmed</span>
+            </Option>
+            <Option value="cancelled">
+              <span className="text-red-600 font-semibold">● Cancelled</span>
+            </Option>
+            <Option value="refunded">
+              <span className="text-yellow-500 font-semibold">● Refunded</span>
+            </Option>
+          </Select>
         </div>
       </Modal>
     </div>
