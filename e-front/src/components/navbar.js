@@ -3,17 +3,18 @@ import { FaUser, FaShoppingCart, FaSearch } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
 import { Drawer, Button, Input, Dropdown, Menu } from "antd";
 import { MenuOutlined } from "@ant-design/icons";
+import { useUser } from "../context/usercontext"; // Import UserContext
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
 
-  // Simulate auth state
-  const isAdmin = true; // Change based on your actual logic
-  const isLoggedIn = true; // Replace this with your auth state
+  const { isLoggedIn, isAdmin, logout } = useUser();
 
   const toggleMenu = () => {
-    setIsOpen(!isOpen);
+    if (isLoggedIn) {
+      setIsOpen(!isOpen);
+    }
   };
 
   const closeMenu = () => {
@@ -21,13 +22,15 @@ const Navbar = () => {
   };
 
   const handleIconClick = () => {
-    navigate(isLoggedIn ? "/profile" : "/login");
+    if (isLoggedIn) {
+      navigate("/profile");
+    } else {
+      navigate("/login");
+    }
   };
 
   const handleLogout = () => {
-    console.log("Logging out...");
-    // Your real logout logic here
-    // Example: localStorage.removeItem("token");
+    logout();
     navigate("/login");
   };
 
@@ -52,6 +55,7 @@ const Navbar = () => {
           icon={<MenuOutlined />}
           onClick={toggleMenu}
           type="text"
+          disabled={!isLoggedIn} // Disable button if not logged in
         />
 
         {/* Logo */}
@@ -85,7 +89,10 @@ const Navbar = () => {
           )}
 
           {/* User Icon with Dropdown */}
-          <Dropdown overlay={dropdownMenu} trigger={["hover"]}>
+          <Dropdown
+            overlay={dropdownMenu}
+            trigger={isLoggedIn ? ["hover"] : []}
+          >
             <div
               onClick={handleIconClick}
               className="text-xl cursor-pointer flex items-center"
