@@ -1,38 +1,95 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Table, Modal, Form, Input, Button, Checkbox, Row, Col } from "antd";
-
-// Sample data for products
-const initialProducts = [
-  {
-    key: 1,
-    name: "Product A",
-    sizes: [
-      { size: "S", stock: 3 },
-      { size: "M", stock: 5 },
-      { size: "L", stock: 2 },
-    ],
-    available: true,
-  },
-  {
-    key: 2,
-    name: "Product B",
-    sizes: [
-      { size: "S", stock: 15 },
-      { size: "M", stock: 12 },
-      { size: "L", stock: 8 },
-      { size: "XL", stock: 8 },
-    ],
-    available: true,
-  },
-];
+import axios from "axios";
 
 const InvenManage = () => {
-  const [products, setProducts] = useState(initialProducts);
+  const [products, setProducts] = useState([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Column configuration for the table
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const fetchProducts = async () => {
+    try {
+      const res = await axios.get(
+        "http://localhost:5000/api/products/inventory"
+      );
+      setProducts(res.data);
+    } catch (err) {
+      console.error("Error fetching products", err);
+    }
+  };
+
+  const showModal = (product) => {
+    setSelectedProduct(product);
+    setIsModalVisible(true);
+  };
+
+  const handleOk = async () => {
+    try {
+      const { _id, sizes, available } = selectedProduct;
+
+      // Send a PUT request to update the product inventory
+      const res = await axios.put(
+        `http://localhost:5000/api/products/inventory/${_id}`,
+        {
+          sizes,
+          available,
+        }
+      );
+
+      // Update the local state with the updated product data
+      const updatedProducts = products.map((product) =>
+        product._id === _id ? res.data : product
+      );
+
+      setProducts(updatedProducts);
+      setIsModalVisible(false);
+    } catch (error) {
+      console.error("Error updating product inventory:", error);
+    }
+  };
+
+  const handleCancel = () => {
+    setIsModalVisible(false);
+  };
+
+  const handleInputChange = (e, field) => {
+    const { value } = e.target;
+    setSelectedProduct({
+      ...selectedProduct,
+      [field]: value,
+    });
+  };
+
+  const handleStockChange = (e, index) => {
+    const newSizes = [...selectedProduct.sizes];
+    newSizes[index].stock = Number(e.target.value);
+    setSelectedProduct({
+      ...selectedProduct,
+      sizes: newSizes,
+    });
+  };
+
+  const handleAvailabilityChange = (e) => {
+    setSelectedProduct({
+      ...selectedProduct,
+      available: e.target.checked,
+    });
+  };
+
+  const totalStock = selectedProduct?.sizes.reduce(
+    (acc, size) => acc + size.stock,
+    0
+  );
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
   const columns = [
     {
       title: "Product Name",
@@ -77,6 +134,18 @@ const InvenManage = () => {
       render: (available) => (available ? "Yes" : "No"),
     },
     {
+      title: "Image",
+      dataIndex: "image",
+      key: "image",
+      render: (img) => (
+        <img
+          src={img}
+          alt="Product"
+          style={{ width: 60, height: 60, objectFit: "cover" }}
+        />
+      ),
+    },
+    {
       title: "Action",
       key: "action",
       render: (text, record) => (
@@ -91,75 +160,13 @@ const InvenManage = () => {
     },
   ];
 
-  // Show modal with product data
-  const showModal = (product) => {
-    setSelectedProduct(product);
-    setIsModalVisible(true);
-  };
-
-  // Handle form submission
-  const handleOk = () => {
-    const updatedProducts = [...products];
-    const index = updatedProducts.findIndex(
-      (p) => p.key === selectedProduct.key
-    );
-    updatedProducts[index] = selectedProduct;
-
-    setProducts(updatedProducts);
-    setIsModalVisible(false);
-  };
-
-  // Handle form cancel
-  const handleCancel = () => {
-    setIsModalVisible(false);
-  };
-
-  // Handle input change for product properties
-  const handleInputChange = (e, field) => {
-    const { value } = e.target;
-    setSelectedProduct({
-      ...selectedProduct,
-      [field]: value,
-    });
-  };
-
-  // Handle stock change
-  const handleStockChange = (e, index) => {
-    const newSizes = [...selectedProduct.sizes];
-    newSizes[index].stock = Number(e.target.value);
-    setSelectedProduct({
-      ...selectedProduct,
-      sizes: newSizes,
-    });
-  };
-
-  // Handle availability toggle
-  const handleAvailabilityChange = (e) => {
-    setSelectedProduct({
-      ...selectedProduct,
-      available: e.target.checked,
-    });
-  };
-
-  // Calculate the total stock
-  const totalStock = selectedProduct?.sizes.reduce(
-    (acc, size) => acc + size.stock,
-    0
-  );
-
-  // Handle pagination changes
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-  };
-
   return (
     <div>
       <h2 className="text-3xl font-semibold mb-4">Inventory Management</h2>
       <br />
-      {/* Ant Design Table */}
       <Table
         columns={columns}
-        dataSource={products}
+        dataSource={products.map((p, idx) => ({ ...p, key: p._id || idx }))}
         className="bg-white rounded shadow"
         pagination={{
           current: currentPage,
@@ -172,7 +179,6 @@ const InvenManage = () => {
         scroll={{ y: 400 }}
       />
 
-      {/* Modal for editing product details */}
       <Modal
         title={`Edit ${selectedProduct?.name}`}
         visible={isModalVisible}
@@ -188,14 +194,6 @@ const InvenManage = () => {
         ]}
       >
         <Form layout="vertical">
-          <Form.Item label="Product Name">
-            <Input
-              name="name"
-              value={selectedProduct?.name}
-              onChange={(e) => handleInputChange(e, "name")}
-            />
-          </Form.Item>
-
           <Form.Item label="Sizes and Stock">
             {selectedProduct?.sizes.map((size, index) => (
               <Row
@@ -228,7 +226,6 @@ const InvenManage = () => {
             </Checkbox>
           </Form.Item>
 
-          {/* Display stock alert */}
           {totalStock < 10 && (
             <div style={{ color: "red", fontWeight: "bold" }}>Low Stock!</div>
           )}

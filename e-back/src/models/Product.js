@@ -6,6 +6,7 @@ const productSchema = new mongoose.Schema(
       type: String,
       required: [true, "Product name is required"],
       trim: true,
+      unique: true,
       minlength: 3,
     },
     description: {
@@ -19,11 +20,20 @@ const productSchema = new mongoose.Schema(
       required: [true, "Product price is required"],
       min: [0, "Price must be a positive number"],
     },
-    sizes: {
-      type: [String],
-      enum: ["XS", "S", "M", "L", "XL"],
-      required: [true, "Product size is required"],
-    },
+    sizes: [
+      {
+        size: {
+          type: String,
+          enum: ["XS", "S", "M", "L", "XL"],
+          required: [true, "Product size is required"],
+        },
+        stock: {
+          type: Number,
+          default: 0, // Default stock level is 0 for each size
+          min: [0, "Stock must be a non-negative number"],
+        },
+      },
+    ],
     details: {
       type: String,
       required: [true, "Product details are required"],
@@ -32,6 +42,10 @@ const productSchema = new mongoose.Schema(
     image: {
       type: String,
       required: [true, "Product image is required"],
+    },
+    available: {
+      type: Boolean,
+      default: false, // Default availability is false
     },
   },
   {

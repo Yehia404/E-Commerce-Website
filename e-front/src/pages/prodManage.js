@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Modal, Table, Tag } from "antd";
+import { Modal, Table, Tag, Button, message } from "antd";
 import axios from "axios";
 
 const ProdManage = () => {
@@ -34,7 +34,17 @@ const ProdManage = () => {
     }
   };
 
-  const showModal = () => setIsModalVisible(true);
+  const showModal = (product = null) => {
+    if (product) {
+      setProduct(product);
+      setIsEditMode(true);
+    } else {
+      resetForm();
+      setIsEditMode(false);
+    }
+    setIsModalVisible(true);
+  };
+
   const handleCancel = () => {
     setIsModalVisible(false);
     resetForm();
@@ -53,7 +63,6 @@ const ProdManage = () => {
     setBackendError("");
     setSizeInput("");
     setEditingProduct(null);
-    setIsEditMode(false);
   };
 
   const handleChange = (e) => {
@@ -66,10 +75,10 @@ const ProdManage = () => {
     const size = sizeInput.trim().toUpperCase();
 
     if (size && allowedSizes.includes(size)) {
-      if (!product.sizes.includes(size)) {
+      if (!product.sizes.some((s) => s.size === size)) {
         setProduct({
           ...product,
-          sizes: [...product.sizes, size],
+          sizes: [...product.sizes, { size, stock: 0 }],
         });
       }
     }
@@ -102,25 +111,42 @@ const ProdManage = () => {
     const finalProduct = {
       ...product,
       price: Number(product.price),
-      sizes: product.sizes,
     };
 
     try {
       if (isEditMode) {
-        // Handle update logic if needed
+        await axios.put(
+          `http://localhost:5000/api/products/${product.name}`,
+          finalProduct
+        );
+        message.success("Product updated successfully");
       } else {
         await axios.post(
           "http://localhost:5000/api/products/addproduct",
           finalProduct
         );
-        fetchProducts(); // Refresh the product list after adding a new product
+        message.success("Product added successfully");
       }
-
+      fetchProducts();
       resetForm();
       setIsModalVisible(false);
     } catch (err) {
       console.error("Error saving product:", err.response?.data || err.message);
       setBackendError(err.response?.data?.error || "An error occurred");
+    }
+  };
+
+  const handleRemove = async (name) => {
+    try {
+      await axios.delete(`http://localhost:5000/api/products/${name}`);
+      message.success("Product removed successfully");
+      fetchProducts();
+    } catch (err) {
+      console.error(
+        "Error removing product:",
+        err.response?.data || err.message
+      );
+      message.error("Failed to remove product");
     }
   };
 
@@ -143,7 +169,7 @@ const ProdManage = () => {
       render: (sizes) =>
         sizes.map((size, idx) => (
           <Tag key={idx} color="blue">
-            {size}
+            {size.size}
           </Tag>
         )),
     },
@@ -162,6 +188,25 @@ const ProdManage = () => {
         />
       ),
     },
+    {
+      title: "Actions",
+      render: (text, record) => (
+        <div className="flex space-x-2">
+          <button
+            onClick={() => showModal(record)}
+            className="bg-black text-white px-3 py-1 rounded hover:bg-gray-800"
+          >
+            Edit
+          </button>
+          <button
+            onClick={() => handleRemove(record.name)}
+            className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-700"
+          >
+            Remove
+          </button>
+        </div>
+      ),
+    },
   ];
 
   return (
@@ -177,7 +222,7 @@ const ProdManage = () => {
         />
         <div className="flex justify-end mt-4">
           <button
-            onClick={showModal}
+            onClick={() => showModal()}
             className="px-5 py-2 bg-black text-white rounded hover:bg-gray-800"
           >
             Add Product
@@ -205,6 +250,7 @@ const ProdManage = () => {
               value={product.name}
               onChange={handleChange}
               className="w-full mt-1 p-1 border rounded-sm"
+              disabled={isEditMode} // Disable name editing in edit mode
             />
             {errors.name && (
               <p className="text-red-500 text-xs">{errors.name}</p>
@@ -284,7 +330,7 @@ const ProdManage = () => {
                   key={idx}
                   className="bg-gray-200 px-2 py-0.5 rounded-full text-xs"
                 >
-                  {size}
+                  {size.size}
                 </span>
               ))}
             </div>

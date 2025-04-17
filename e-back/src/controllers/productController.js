@@ -31,7 +31,85 @@ const addProduct = async (req, res) => {
   }
 };
 
+// Edit a product by name
+const editProductByName = async (req, res) => {
+  try {
+    const { name, description, price, sizes, details, image } = req.body;
+    const updatedProduct = await Product.findOneAndUpdate(
+      { name: req.params.name },
+      { name, description, price, sizes, details, image },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedProduct) {
+      return res.status(404).json({ error: "Product not found" });
+    }
+
+    res.status(200).json(updatedProduct);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+};
+
+// Remove a product by name
+const removeProductByName = async (req, res) => {
+  try {
+    const deletedProduct = await Product.findOneAndDelete({
+      name: req.params.name,
+    });
+    if (!deletedProduct) {
+      return res.status(404).json({ error: "Product not found" });
+    }
+    res.status(200).json({ message: "Product removed successfully" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Get all products with required attributes
+const getInventoryProducts = async (req, res) => {
+  try {
+    const products = await Product.find(
+      {},
+      "name sizes available image _id"
+    ).sort({
+      createdAt: -1,
+    });
+    res.status(200).json(products);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Controller to update product inventory
+const updateProductInventory = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { sizes, available } = req.body;
+
+    // Find the product by ID and update its sizes and availability
+    const product = await Product.findByIdAndUpdate(
+      id,
+      { sizes, available },
+      { new: true }
+    );
+
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    res.json(product);
+  } catch (error) {
+    console.error("Error updating product inventory:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 module.exports = {
   getAllProducts,
   addProduct,
+  editProductByName,
+  removeProductByName,
+  getInventoryProducts,
+  updateProductInventory,
 };
