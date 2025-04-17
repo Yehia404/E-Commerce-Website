@@ -13,7 +13,7 @@ const getAllProducts = async (req, res) => {
 // Add a new product
 const addProduct = async (req, res) => {
   try {
-    const { name, description, price, sizes, details, image } = req.body;
+    const { name, description, price, sizes, details, image, style } = req.body;
 
     const newProduct = new Product({
       name,
@@ -22,6 +22,7 @@ const addProduct = async (req, res) => {
       sizes,
       details,
       image,
+      style,
     });
 
     await newProduct.save();
@@ -34,10 +35,10 @@ const addProduct = async (req, res) => {
 // Edit a product by name
 const editProductByName = async (req, res) => {
   try {
-    const { name, description, price, sizes, details, image } = req.body;
+    const { name, description, price, sizes, details, image, style } = req.body;
     const updatedProduct = await Product.findOneAndUpdate(
       { name: req.params.name },
-      { name, description, price, sizes, details, image },
+      { name, description, price, sizes, details, image, style },
       { new: true, runValidators: true }
     );
 

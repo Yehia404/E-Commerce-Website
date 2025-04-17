@@ -12,12 +12,15 @@ const ProdManage = () => {
     image: "",
     sizes: [],
     details: "",
+    style: "",
   });
   const [errors, setErrors] = useState({});
   const [backendError, setBackendError] = useState("");
-  const [sizeInput, setSizeInput] = useState("");
   const [editingProduct, setEditingProduct] = useState(null);
   const [isEditMode, setIsEditMode] = useState(false);
+
+  const allowedSizes = ["XS", "S", "M", "L", "XL"];
+  const allowedStyles = ["Casual", "Formal", "Sport"];
 
   useEffect(() => {
     fetchProducts();
@@ -58,10 +61,10 @@ const ProdManage = () => {
       image: "",
       sizes: [],
       details: "",
+      style: "",
     });
     setErrors({});
     setBackendError("");
-    setSizeInput("");
     setEditingProduct(null);
   };
 
@@ -70,20 +73,13 @@ const ProdManage = () => {
     setProduct({ ...product, [name]: value });
   };
 
-  const handleAddSize = () => {
-    const allowedSizes = ["XS", "S", "M", "L", "XL"];
-    const size = sizeInput.trim().toUpperCase();
-
-    if (size && allowedSizes.includes(size)) {
-      if (!product.sizes.some((s) => s.size === size)) {
-        setProduct({
-          ...product,
-          sizes: [...product.sizes, { size, stock: 0 }],
-        });
-      }
-    }
-
-    setSizeInput("");
+  const handleSizeToggle = (size) => {
+    setProduct((prevProduct) => {
+      const sizes = prevProduct.sizes.some((s) => s.size === size)
+        ? prevProduct.sizes.filter((s) => s.size !== size)
+        : [...prevProduct.sizes, { size, stock: 0 }];
+      return { ...prevProduct, sizes };
+    });
   };
 
   const validate = () => {
@@ -96,6 +92,7 @@ const ProdManage = () => {
     if (!product.sizes.length) err.sizes = "At least one size is required.";
     if (!product.details.trim()) err.details = "Details are required.";
     if (!product.image.trim()) err.image = "Image URL is required.";
+    if (!product.style.trim()) err.style = "Style is required.";
     return err;
   };
 
@@ -172,6 +169,10 @@ const ProdManage = () => {
             {size.size}
           </Tag>
         )),
+    },
+    {
+      title: "Style",
+      dataIndex: "style",
     },
     {
       title: "Details",
@@ -309,33 +310,43 @@ const ProdManage = () => {
           <div>
             <label className="block font-medium">Sizes</label>
             <div className="flex items-center gap-2 mt-1">
-              <input
-                type="text"
-                value={sizeInput}
-                onChange={(e) => setSizeInput(e.target.value)}
-                placeholder="Enter size (e.g., M)"
-                className="flex-1 p-1 border rounded-sm"
-              />
-              <button
-                type="button"
-                onClick={handleAddSize}
-                className="px-3 py-1 bg-black text-white rounded-sm hover:bg-gray-800"
-              >
-                Add
-              </button>
-            </div>
-            <div className="mt-1 flex flex-wrap gap-1">
-              {product.sizes.map((size, idx) => (
-                <span
-                  key={idx}
-                  className="bg-gray-200 px-2 py-0.5 rounded-full text-xs"
+              {allowedSizes.map((size) => (
+                <button
+                  key={size}
+                  type="button"
+                  onClick={() => handleSizeToggle(size)}
+                  className={`px-3 py-1 rounded-sm ${
+                    product.sizes.some((s) => s.size === size)
+                      ? "bg-blue-500 text-white"
+                      : "bg-gray-200"
+                  }`}
                 >
-                  {size.size}
-                </span>
+                  {size}
+                </button>
               ))}
             </div>
             {errors.sizes && (
               <p className="text-red-500 text-xs">{errors.sizes}</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block font-medium">Style</label>
+            <select
+              name="style"
+              value={product.style}
+              onChange={handleChange}
+              className="w-full mt-1 p-1 border rounded-sm"
+            >
+              <option value="">Select a style</option>
+              {allowedStyles.map((style) => (
+                <option key={style} value={style}>
+                  {style}
+                </option>
+              ))}
+            </select>
+            {errors.style && (
+              <p className="text-red-500 text-xs">{errors.style}</p>
             )}
           </div>
 

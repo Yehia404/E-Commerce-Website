@@ -49,9 +49,31 @@ const productSchema = new mongoose.Schema(
     },
     discount: {
       type: Number,
-      default: 0, // Default discount is 0
+      default: 0,
       min: [0, "Discount must be a non-negative number"],
     },
+    style: {
+      type: String,
+      required: [true, "Product style is required"],
+      trim: true,
+    },
+    reviews: [
+      {
+        user: {
+          type: String,
+          trim: true,
+        },
+        rating: {
+          type: Number,
+          min: [1, "Rating must be at least 1"],
+          max: [5, "Rating cannot exceed 5"],
+        },
+        comment: {
+          type: String,
+          trim: true,
+        },
+      },
+    ],
   },
   {
     timestamps: true,
