@@ -7,6 +7,7 @@ const InvenManage = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [errors, setErrors] = useState({ discount: "", stock: {} });
 
   useEffect(() => {
     fetchProducts();
@@ -25,23 +26,31 @@ const InvenManage = () => {
 
   const showModal = (product) => {
     setSelectedProduct(product);
+    setErrors({ discount: "", stock: {} });
     setIsModalVisible(true);
   };
 
   const handleOk = async () => {
     try {
-      const { _id, sizes, available } = selectedProduct;
+      const { _id, sizes, available, discount } = selectedProduct;
 
-      // Send a PUT request to update the product inventory
+      if (discount < 0 || discount > 100) {
+        setErrors((prev) => ({
+          ...prev,
+          discount: "Discount must be between 0 and 100",
+        }));
+        return;
+      }
+
       const res = await axios.put(
         `http://localhost:5000/api/products/inventory/${_id}`,
         {
           sizes,
           available,
+          discount,
         }
       );
 
-      // Update the local state with the updated product data
       const updatedProducts = products.map((product) =>
         product._id === _id ? res.data : product
       );
@@ -58,7 +67,21 @@ const InvenManage = () => {
   };
 
   const handleInputChange = (e, field) => {
-    const { value } = e.target;
+    let value = Number(e.target.value);
+    let error = "";
+
+    if (field === "discount") {
+      if (value < 0) {
+        value = 0;
+        error = "Minimum is 0";
+      }
+      if (value > 100) {
+        value = 100;
+        error = "Maximum is 100";
+      }
+      setErrors((prev) => ({ ...prev, discount: error }));
+    }
+
     setSelectedProduct({
       ...selectedProduct,
       [field]: value,
@@ -66,12 +89,24 @@ const InvenManage = () => {
   };
 
   const handleStockChange = (e, index) => {
+    let value = Number(e.target.value);
+    if (value < 0) value = 0;
+
     const newSizes = [...selectedProduct.sizes];
-    newSizes[index].stock = Number(e.target.value);
+    newSizes[index].stock = value;
+
     setSelectedProduct({
       ...selectedProduct,
       sizes: newSizes,
     });
+
+    setErrors((prev) => ({
+      ...prev,
+      stock: {
+        ...prev.stock,
+        [index]: value < 0 ? "Stock can't be negative" : "",
+      },
+    }));
   };
 
   const handleAvailabilityChange = (e) => {
@@ -132,6 +167,12 @@ const InvenManage = () => {
       dataIndex: "available",
       key: "available",
       render: (available) => (available ? "Yes" : "No"),
+    },
+    {
+      title: "Discount",
+      dataIndex: "discount",
+      key: "discount",
+      render: (discount) => `${discount}%`,
     },
     {
       title: "Image",
@@ -196,24 +237,27 @@ const InvenManage = () => {
         <Form layout="vertical">
           <Form.Item label="Sizes and Stock">
             {selectedProduct?.sizes.map((size, index) => (
-              <Row
-                key={index}
-                gutter={16}
-                align="middle"
-                style={{ marginBottom: 8 }}
-              >
-                <Col span={6}>
-                  <span style={{ fontWeight: 500 }}>{size.size}</span>
-                </Col>
-                <Col span={18}>
-                  <Input
-                    type="number"
-                    value={size.stock}
-                    onChange={(e) => handleStockChange(e, index)}
-                    style={{ width: "100%" }}
-                  />
-                </Col>
-              </Row>
+              <div key={index} style={{ marginBottom: 12 }}>
+                <Row gutter={16} align="middle">
+                  <Col span={6}>
+                    <span style={{ fontWeight: 500 }}>{size.size}</span>
+                  </Col>
+                  <Col span={18}>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={size.stock}
+                      onChange={(e) => handleStockChange(e, index)}
+                      style={{ width: "100%" }}
+                    />
+                    {errors.stock[index] && (
+                      <div style={{ color: "red", fontSize: 12 }}>
+                        {errors.stock[index]}
+                      </div>
+                    )}
+                  </Col>
+                </Row>
+              </div>
             ))}
           </Form.Item>
 
@@ -224,6 +268,22 @@ const InvenManage = () => {
             >
               Mark as available
             </Checkbox>
+          </Form.Item>
+
+          <Form.Item label="Discount">
+            <Input
+              type="number"
+              min={0}
+              max={100}
+              value={selectedProduct?.discount}
+              onChange={(e) => handleInputChange(e, "discount")}
+              style={{ width: "100%" }}
+            />
+            {errors.discount && (
+              <div style={{ color: "red", fontSize: 12 }}>
+                {errors.discount}
+              </div>
+            )}
           </Form.Item>
 
           {totalStock < 10 && (

@@ -29,7 +29,7 @@ const productSchema = new mongoose.Schema(
         },
         stock: {
           type: Number,
-          default: 0, // Default stock level is 0 for each size
+          default: 0,
           min: [0, "Stock must be a non-negative number"],
         },
       },
@@ -45,11 +45,16 @@ const productSchema = new mongoose.Schema(
     },
     available: {
       type: Boolean,
-      default: false, // Default availability is false
+      default: false,
+    },
+    discount: {
+      type: Number,
+      default: 0, // Default discount is 0
+      min: [0, "Discount must be a non-negative number"],
     },
   },
   {
-    timestamps: true, // adds createdAt and updatedAt
+    timestamps: true,
   }
 );
 

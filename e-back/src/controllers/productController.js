@@ -71,7 +71,7 @@ const getInventoryProducts = async (req, res) => {
   try {
     const products = await Product.find(
       {},
-      "name sizes available image _id"
+      "name sizes available image discount _id"
     ).sort({
       createdAt: -1,
     });
@@ -85,12 +85,12 @@ const getInventoryProducts = async (req, res) => {
 const updateProductInventory = async (req, res) => {
   try {
     const { id } = req.params;
-    const { sizes, available } = req.body;
+    const { sizes, available, discount } = req.body;
 
-    // Find the product by ID and update its sizes and availability
+    // Find the product by ID and update its sizes, availability, and discount
     const product = await Product.findByIdAndUpdate(
       id,
-      { sizes, available },
+      { sizes, available, discount },
       { new: true }
     );
 
