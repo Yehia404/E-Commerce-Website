@@ -20,7 +20,7 @@ const ProdManage = () => {
   const [isEditMode, setIsEditMode] = useState(false);
 
   const allowedSizes = ["XS", "S", "M", "L", "XL"];
-  const allowedStyles = ["Casual", "Formal", "Sport"];
+  const allowedStyles = ["Casual", "Formal", "Party", "Sport"];
 
   useEffect(() => {
     fetchProducts();

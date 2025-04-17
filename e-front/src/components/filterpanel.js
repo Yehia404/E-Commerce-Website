@@ -11,7 +11,7 @@ const FilterPanel = ({
   handleStyleClick,
 }) => {
   const sizes = ["XS", "S", "M", "L", "XL", "2XL"];
-  const dressStyles = ["Casual", "Formal", "Party", "Gym"];
+  const dressStyles = ["Casual", "Formal", "Party", "Sport"];
 
   return (
     <div className="w-64 bg-white p-6 rounded-lg shadow-md">

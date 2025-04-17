@@ -1,58 +1,38 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Navbar from "../components/navbar";
 import Footer from "../components/footer";
 import FilterPanel from "../components/filterpanel";
+import axios from "axios";
 import "../styles/slider.css";
 
-const products = [
-  {
-    id: 1,
-    name: "Gradient Graphic T-shirt",
-    description: "A trendy t-shirt perfect for parties and casual wear.",
-    price: 145,
-    discount: 20,
-    images: ["img1.jpg", "img2.jpg", "img3.jpg"],
-    sizes: [
-      { size: "XS", stock: 2 },
-      { size: "S", stock: 3 },
-      { size: "M", stock: 1 },
-      { size: "L", stock: 0 },
-      { size: "XL", stock: 0 },
-    ],
-    style: "Casual",
-    details: "Made of 100% cotton. Breathable, soft, and stylish.",
-    reviews: [
-      { user: "John", comment: "Great quality!", rating: 5 },
-      { user: "Jane", comment: "Loved the color!", rating: 3 },
-    ],
-  },
-  {
-    id: 2,
-    name: "Oversized Hoodie",
-    description: "Comfortable oversized hoodie for casual wear.",
-    price: 90,
-    discount: 25,
-    images: ["img1.jpg", "img2.jpg"],
-    sizes: [
-      { size: "M", stock: 2 },
-      { size: "L", stock: 4 },
-    ],
-    style: "Gym",
-    details: "Made of soft, high-quality fabric for all-day comfort.",
-    reviews: [
-      { user: "Alex", comment: "Love the hoodie!", rating: 4 },
-      { user: "Sara", comment: "Very comfortable!", rating: 5 },
-    ],
-  },
-];
-
 const Shop = () => {
+  const [products, setProducts] = useState([]);
   const [priceRange, setPriceRange] = useState([50, 250]);
   const [selectedSize, setSelectedSize] = useState(null);
   const [selectedStyle, setSelectedStyle] = useState([]);
   const [showFilters, setShowFilters] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const productsPerPage = 4;
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const response = await axios.get(
+          "http://localhost:5000/api/products/allproducts"
+        );
+        setProducts(response.data);
+        setLoading(false);
+      } catch (err) {
+        console.error("Error fetching products:", err);
+        setError("Failed to load products");
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
 
   const handleSizeClick = (size) => {
     setSelectedSize(size === selectedSize ? null : size);
@@ -127,61 +107,73 @@ const Shop = () => {
 
           {/* Product Grid */}
           <div className="flex-1 w-full">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {paginatedProducts.map((product) => {
-                const discountedPrice = calculateDiscountedPrice(
-                  product.price,
-                  product.discount
-                );
-                const totalReviews = product.reviews.length;
-                const averageRating =
-                  product.reviews.reduce((acc, curr) => acc + curr.rating, 0) /
-                  totalReviews;
+            {loading ? (
+              <div>Loading products...</div>
+            ) : error ? (
+              <div className="text-red-500">{error}</div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {paginatedProducts.map((product) => {
+                  const discountedPrice = calculateDiscountedPrice(
+                    product.price,
+                    product.discount
+                  );
+                  const totalReviews = product.reviews.length;
+                  const averageRating =
+                    product.reviews.reduce(
+                      (acc, curr) => acc + curr.rating,
+                      0
+                    ) / totalReviews;
 
-                return (
-                  <div key={product.id} className="group">
-                    <div className="w-full pb-[100%] relative mb-4">
-                      <div className="absolute top-0 left-0 w-full h-full bg-gray-300 rounded-lg" />
-                    </div>
+                  return (
+                    <div key={product.id} className="group">
+                      <div className="w-full pb-[100%] relative mb-4">
+                        <img
+                          src={product.image}
+                          alt={product.name}
+                          className="absolute top-0 left-0 w-full h-full object-cover rounded-lg"
+                        />
+                      </div>
 
-                    <div className="space-y-2">
-                      <h3 className="font-medium">{product.name}</h3>
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold">
-                          ${discountedPrice.toFixed(2)}
-                        </span>
-                        {product.price !== discountedPrice && (
-                          <span className="text-gray-500 line-through">
-                            ${product.price}
+                      <div className="space-y-2">
+                        <h3 className="font-medium">{product.name}</h3>
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold">
+                            ${discountedPrice.toFixed(2)}
                           </span>
-                        )}
-                      </div>
-                      <div className="flex items-center">
-                        <div className="flex text-yellow-400">
-                          {[...Array(5)].map((_, i) => (
-                            <span
-                              key={i}
-                              className={`w-4 h-4 ${
-                                i < Math.floor(averageRating)
-                                  ? "text-yellow-400"
-                                  : i < averageRating
-                                  ? "text-yellow-300"
-                                  : "text-gray-300"
-                              }`}
-                            >
-                              ★
+                          {product.price !== discountedPrice && (
+                            <span className="text-gray-500 line-through">
+                              ${product.price}
                             </span>
-                          ))}
+                          )}
                         </div>
-                        <span className="text-sm text-gray-500 ml-2">
-                          ({totalReviews} reviews)
-                        </span>
+                        <div className="flex items-center">
+                          <div className="flex text-yellow-400">
+                            {[...Array(5)].map((_, i) => (
+                              <span
+                                key={i}
+                                className={`w-4 h-4 ${
+                                  i < Math.floor(averageRating)
+                                    ? "text-yellow-400"
+                                    : i < averageRating
+                                    ? "text-yellow-300"
+                                    : "text-gray-300"
+                                }`}
+                              >
+                                ★
+                              </span>
+                            ))}
+                          </div>
+                          <span className="text-sm text-gray-500 ml-2">
+                            ({totalReviews} reviews)
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
 
