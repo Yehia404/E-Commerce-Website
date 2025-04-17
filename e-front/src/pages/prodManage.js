@@ -1,43 +1,59 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Modal, Table, Tag } from "antd";
-
-const dummyProducts = [
-  {
-    key: "1",
-    name: "Gradient Graphic T-shirt",
-    description: "A trendy t-shirt perfect for parties and casual wear.",
-    price: 145,
-    sizes: ["XS", "S", "M", "L", "XL"],
-    details: "Made of 100% cotton. Breathable, soft, and stylish.",
-  },
-  {
-    key: "2",
-    name: "Denim Jacket",
-    description: "Classic and rugged. Ideal for winter layering.",
-    price: 220,
-    sizes: ["S", "M", "L"],
-    details: "High-quality denim with fleece lining.",
-  },
-];
+import axios from "axios";
 
 const ProdManage = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [products, setProducts] = useState(dummyProducts);
+  const [products, setProducts] = useState([]);
   const [product, setProduct] = useState({
     name: "",
     description: "",
     price: "",
-    images: [],
+    image: "",
     sizes: [],
     details: "",
   });
   const [errors, setErrors] = useState({});
+  const [backendError, setBackendError] = useState("");
   const [sizeInput, setSizeInput] = useState("");
+  const [editingProduct, setEditingProduct] = useState(null);
+  const [isEditMode, setIsEditMode] = useState(false);
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const fetchProducts = async () => {
+    try {
+      const res = await axios.get(
+        "http://localhost:5000/api/products/allproducts"
+      );
+      setProducts(res.data);
+    } catch (err) {
+      console.error("Error fetching products", err);
+    }
+  };
 
   const showModal = () => setIsModalVisible(true);
   const handleCancel = () => {
     setIsModalVisible(false);
+    resetForm();
+  };
+
+  const resetForm = () => {
+    setProduct({
+      name: "",
+      description: "",
+      price: "",
+      image: "",
+      sizes: [],
+      details: "",
+    });
     setErrors({});
+    setBackendError("");
+    setSizeInput("");
+    setEditingProduct(null);
+    setIsEditMode(false);
   };
 
   const handleChange = (e) => {
@@ -45,21 +61,15 @@ const ProdManage = () => {
     setProduct({ ...product, [name]: value });
   };
 
-  const handleImageChange = (e) => {
-    const files = Array.from(e.target.files);
-    setProduct({ ...product, images: files });
-  };
-
   const handleAddSize = () => {
     const allowedSizes = ["XS", "S", "M", "L", "XL"];
     const size = sizeInput.trim().toUpperCase();
 
     if (size && allowedSizes.includes(size)) {
-      const alreadyAdded = product.sizes.some((s) => s.size === size);
-      if (!alreadyAdded) {
+      if (!product.sizes.includes(size)) {
         setProduct({
           ...product,
-          sizes: [...product.sizes, { size }],
+          sizes: [...product.sizes, size],
         });
       }
     }
@@ -76,10 +86,11 @@ const ProdManage = () => {
       err.price = "Valid price is required.";
     if (!product.sizes.length) err.sizes = "At least one size is required.";
     if (!product.details.trim()) err.details = "Details are required.";
+    if (!product.image.trim()) err.image = "Image URL is required.";
     return err;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     const validationErrors = validate();
@@ -88,52 +99,29 @@ const ProdManage = () => {
       return;
     }
 
-    const updatedProduct = {
+    const finalProduct = {
       ...product,
-      key: editingProduct ? editingProduct.key : Date.now(),
-      sizes: product.sizes.map((s) => s.size),
+      price: Number(product.price),
+      sizes: product.sizes,
     };
 
-    if (isEditMode) {
-      const updatedList = products.map((p) =>
-        p.key === editingProduct.key ? updatedProduct : p
-      );
-      setProducts(updatedList);
-    } else {
-      setProducts([...products, updatedProduct]);
+    try {
+      if (isEditMode) {
+        // Handle update logic if needed
+      } else {
+        await axios.post(
+          "http://localhost:5000/api/products/addproduct",
+          finalProduct
+        );
+        fetchProducts(); // Refresh the product list after adding a new product
+      }
+
+      resetForm();
+      setIsModalVisible(false);
+    } catch (err) {
+      console.error("Error saving product:", err.response?.data || err.message);
+      setBackendError(err.response?.data?.error || "An error occurred");
     }
-
-    setProduct({
-      name: "",
-      description: "",
-      price: "",
-      images: [],
-      sizes: [],
-      details: "",
-    });
-    setErrors({});
-    setSizeInput("");
-    setEditingProduct(null);
-    setIsEditMode(false);
-    setIsModalVisible(false);
-  };
-
-  const [editingProduct, setEditingProduct] = useState(null);
-  const [isEditMode, setIsEditMode] = useState(false);
-  const handleEdit = (productToEdit) => {
-    setProduct({
-      ...productToEdit,
-      sizes: productToEdit.sizes.map((s) => ({ size: s })),
-      images: [],
-    });
-    setEditingProduct(productToEdit);
-    setIsEditMode(true);
-    setIsModalVisible(true);
-  };
-
-  const handleRemove = (key) => {
-    const filtered = products.filter((item) => item.key !== key);
-    setProducts(filtered);
   };
 
   const columns = [
@@ -164,22 +152,14 @@ const ProdManage = () => {
       dataIndex: "details",
     },
     {
-      title: "Actions",
-      render: (_, record) => (
-        <div className="flex gap-2">
-          <button
-            onClick={() => handleEdit(record)}
-            className="px-3 py-1 bg-black text-white rounded hover:bg-gray-800"
-          >
-            Edit
-          </button>
-          <button
-            onClick={() => handleRemove(record.key)}
-            className="px-3 py-1 bg-black text-white rounded hover:bg-gray-800"
-          >
-            Remove
-          </button>
-        </div>
+      title: "Image",
+      dataIndex: "image",
+      render: (img) => (
+        <img
+          src={img}
+          alt="Product"
+          style={{ width: 60, height: 60, objectFit: "cover" }}
+        />
       ),
     },
   ];
@@ -192,7 +172,7 @@ const ProdManage = () => {
         <h2 className="text-xl font-semibold mb-4">Product Catalog</h2>
         <Table
           columns={columns}
-          dataSource={products}
+          dataSource={products.map((p, idx) => ({ ...p, key: p._id || idx }))}
           pagination={{ pageSize: 4 }}
         />
         <div className="flex justify-end mt-4">
@@ -211,6 +191,11 @@ const ProdManage = () => {
         onCancel={handleCancel}
         footer={null}
       >
+        {backendError && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
+            <span className="block sm:inline">{backendError}</span>
+          </div>
+        )}
         <form onSubmit={handleSubmit} className="space-y-2 text-sm">
           <div>
             <label className="block font-medium">Name</label>
@@ -254,14 +239,25 @@ const ProdManage = () => {
           </div>
 
           <div>
-            <label className="block font-medium">Images</label>
+            <label className="block font-medium">Image URL</label>
             <input
-              type="file"
-              multiple
-              accept="image/*"
-              onChange={handleImageChange}
-              className="mt-1"
+              type="text"
+              name="image"
+              value={product.image}
+              onChange={handleChange}
+              placeholder="https://example.com/image.jpg"
+              className="w-full mt-1 p-1 border rounded-sm"
             />
+            {errors.image && (
+              <p className="text-red-500 text-xs">{errors.image}</p>
+            )}
+            {product.image && (
+              <img
+                src={product.image}
+                alt="Preview"
+                className="mt-2 w-24 h-24 object-cover rounded"
+              />
+            )}
           </div>
 
           <div>
@@ -283,12 +279,12 @@ const ProdManage = () => {
               </button>
             </div>
             <div className="mt-1 flex flex-wrap gap-1">
-              {product.sizes.map((s, idx) => (
+              {product.sizes.map((size, idx) => (
                 <span
                   key={idx}
                   className="bg-gray-200 px-2 py-0.5 rounded-full text-xs"
                 >
-                  {s.size}
+                  {size}
                 </span>
               ))}
             </div>
