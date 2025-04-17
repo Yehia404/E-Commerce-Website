@@ -1,10 +1,13 @@
 import React, { useState } from "react";
 import Navbar from "../components/navbar";
 import Footer from "../components/footer";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Password from "../components/password";
+import { useUser } from "../context/usercontext";
 
 const Register = () => {
+  const { registerUser } = useUser();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -14,9 +17,12 @@ const Register = () => {
   });
 
   const [errors, setErrors] = useState({});
+  const [serverError, setServerError] = useState("");
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    setErrors({ ...errors, [e.target.name]: "" });
+    setServerError("");
   };
 
   const validateForm = () => {
@@ -25,7 +31,6 @@ const Register = () => {
     if (formData.firstName.length < 3) {
       newErrors.firstName = "First name must be at least 3 characters.";
     }
-
     if (formData.lastName.length < 3) {
       newErrors.lastName = "Last name must be at least 3 characters.";
     }
@@ -47,13 +52,16 @@ const Register = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (validateForm()) {
-      console.log("Form submitted:", formData);
-      // handle actual form submission here
+    if (!validateForm()) return;
+
+    const res = await registerUser(formData);
+
+    if (res.success) {
+      navigate("/login");
     } else {
-      console.log("Validation failed");
+      setServerError(res.message);
     }
   };
 
@@ -132,6 +140,8 @@ const Register = () => {
                 onChange={handleChange}
                 placeholder="Enter your phone number"
                 className="w-full border-b border-gray-300 py-2 px-4 focus:outline-none focus:border-black"
+                minLength={11}
+                maxLength={11}
               />
               {errors.phoneNumber && (
                 <p className="text-red-500 text-sm mt-1">
@@ -146,6 +156,13 @@ const Register = () => {
               onChange={handleChange}
               error={errors.password}
             />
+
+            {/* Backend error bubble */}
+            {serverError && (
+              <div className="bg-red-100 text-red-700 text-sm px-4 py-2 rounded mt-4">
+                {serverError}
+              </div>
+            )}
 
             {/* Register Button */}
             <button

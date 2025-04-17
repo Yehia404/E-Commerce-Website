@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Modal, Table, Input, Button as AntButton, Select, message } from "antd";
+import { Modal, Table, Input, Button, Select, message, Tag } from "antd";
 import { MinusCircleOutlined, PlusOutlined } from "@ant-design/icons";
 
 const { Option } = Select;
@@ -8,86 +8,74 @@ const initialOrders = [
   {
     id: 1,
     orderNumber: "ORD-001",
-    items: [
-      { product: "T-shirt", quantity: 2, size: "M" },
-    ],
+    items: [{ product: "T-shirt", quantity: 2, size: "M" }],
     price: "$40",
     buyer: "Alice Smith",
     name: "Alice Smith",
     address: "123 Main St",
     phone: "123-456-7890",
     email: "alice@example.com",
-    status: "Shipped",
+    status: "confirmed",
   },
   {
     id: 2,
     orderNumber: "ORD-002",
-    items: [
-      { product: "Sneakers", quantity: 1, size: "10" },
-    ],
+    items: [{ product: "Sneakers", quantity: 1, size: "L" }],
     price: "$70",
     buyer: "John Doe",
     name: "John Doe",
     address: "456 Oak St",
     phone: "987-654-3210",
     email: "john@example.com",
-    status: "Pending",
+    status: "refunded",
   },
   {
     id: 3,
     orderNumber: "ORD-003",
-    items: [
-      { product: "Hoodie", quantity: 1, size: "L" },
-    ],
+    items: [{ product: "Hoodie", quantity: 1, size: "L" }],
     price: "$50",
     buyer: "Jane Williams",
     name: "Jane Williams",
     address: "789 Pine St",
     phone: "555-555-5555",
     email: "jane@example.com",
-    status: "Processing",
+    status: "cancelled",
   },
   {
     id: 4,
     orderNumber: "ORD-004",
-    items: [
-      { product: "Jacket", quantity: 1, size: "L" },
-    ],
+    items: [{ product: "Jacket", quantity: 1, size: "L" }],
     price: "$80",
     buyer: "Tom Lee",
     name: "Tom Lee",
     address: "123 Maple St",
     phone: "555-123-4567",
     email: "tom@example.com",
-    status: "Delivered",
+    status: "confirmed",
   },
   {
     id: 5,
     orderNumber: "ORD-005",
-    items: [
-      { product: "Jeans", quantity: 2, size: "M" },
-    ],
+    items: [{ product: "Jeans", quantity: 2, size: "M" }],
     price: "$60",
     buyer: "Sarah Brown",
     name: "Sarah Brown",
     address: "456 Birch St",
     phone: "555-987-6543",
     email: "sarah@example.com",
-    status: "Cancelled",
+    status: "cancelled",
   },
   {
     id: 6,
     orderNumber: "ORD-006",
-    items: [
-      { product: "Shirt", quantity: 1, size: "S" },
-    ],
+    items: [{ product: "Shirt", quantity: 1, size: "S" }],
     price: "$30",
     buyer: "David Green",
     name: "David Green",
     address: "789 Oak St",
     phone: "555-555-1234",
     email: "david@example.com",
-    status: "Pending",
+    status: "confirmed",
   },
 ];
 
@@ -125,8 +113,18 @@ export default function OrderManagementPage() {
   };
 
   const handleConfirm = () => {
-    const requiredFields = ["orderNumber", "price", "buyer", "name", "address", "phone", "email"];
-    const hasEmptyFields = requiredFields.some((field) => !selectedOrder[field]);
+    const requiredFields = [
+      "orderNumber",
+      "price",
+      "buyer",
+      "name",
+      "address",
+      "phone",
+      "email",
+    ];
+    const hasEmptyFields = requiredFields.some(
+      (field) => !selectedOrder[field]
+    );
 
     if (hasEmptyFields) {
       message.error("Please fill in all the required fields.");
@@ -148,18 +146,31 @@ export default function OrderManagementPage() {
     setIsModalOpen(false);
   };
 
+  const getStatusTag = (status) => {
+    const colorMap = {
+      confirmed: "green",
+      cancelled: "red",
+      refunded: "gold",
+    };
+    return <Tag color={colorMap[status]}>{status.toUpperCase()}</Tag>;
+  };
+
   const columns = [
     {
       title: "Order Number",
       dataIndex: "orderNumber",
       key: "orderNumber",
-      width: 120
+      width: 120,
     },
     {
       title: "Content",
       key: "content",
       render: (_, record) =>
-        record.items.map((item, i) => `${item.product} (x${item.quantity}) - Size ${item.size}`).join(", "),
+        record.items
+          .map(
+            (item) => `${item.product} (x${item.quantity}) - Size ${item.size}`
+          )
+          .join(", "),
     },
     {
       title: "Price",
@@ -172,42 +183,37 @@ export default function OrderManagementPage() {
       key: "buyer",
     },
     {
-      title: "Actions",
-      key: "actions",
-      render: (_, record) => (
-        <AntButton type="default" style={{ color: "black" }} onClick={() => handleEditClick(record)}>
-          Edit
-        </AntButton>
-      ),
-    },
-    {
       title: "Status",
       dataIndex: "status",
       key: "status",
-      render: (text) => {
-        let color;
-        if (text === "Delivered") color = "green";
-        else if (text === "Cancelled") color = "red";
-        else color = "orange";
-    
-        return (
-          <span style={{ color, fontWeight: "bold" }}>
-            {text}
-          </span>
-        );
-      },
+      render: (status) => getStatusTag(status),
+    },
+    {
+      title: "Actions",
+      key: "actions",
+      render: (_, record) => (
+        <Button
+          type="primary"
+          className="bg-black text-white hover:text-black hover:bg-white transition duration-300"
+          onClick={() => handleEditClick(record)}
+        >
+          Edit
+        </Button>
+      ),
     },
   ];
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-4">Order Management</h1>
+      <h2 className="text-3xl font-semibold mb-4">Order Management</h2>
+      <br />
+
       <Table
         dataSource={orders}
         columns={columns}
         rowKey="id"
         className="bg-white rounded shadow"
-        pagination={{ pageSize: 5 }} // Set pagination to 5 orders per page
+        pagination={{ pageSize: 5 }}
       />
 
       <Modal
@@ -224,7 +230,6 @@ export default function OrderManagementPage() {
             onChange={handleInputChange}
             placeholder="Price"
           />
-          
           <Input
             name="address"
             value={selectedOrder?.address || ""}
@@ -251,13 +256,17 @@ export default function OrderManagementPage() {
               <Input
                 placeholder="Product"
                 value={item.product}
-                onChange={(e) => handleItemChange(index, "product", e.target.value)}
+                onChange={(e) =>
+                  handleItemChange(index, "product", e.target.value)
+                }
               />
               <Input
                 placeholder="Quantity"
                 type="number"
                 value={item.quantity}
-                onChange={(e) => handleItemChange(index, "quantity", e.target.value)}
+                onChange={(e) =>
+                  handleItemChange(index, "quantity", e.target.value)
+                }
               />
               <Select
                 value={item.size}
@@ -270,13 +279,34 @@ export default function OrderManagementPage() {
                 <Option value="L">L</Option>
                 <Option value="XL">XL</Option>
               </Select>
-              
-              <MinusCircleOutlined onClick={() => removeItem(index)} className="text-red-500 cursor-pointer" />
+              <MinusCircleOutlined
+                onClick={() => removeItem(index)}
+                className="text-red-500 cursor-pointer"
+              />
             </div>
           ))}
-          <AntButton type="dashed" onClick={addItem} block icon={<PlusOutlined />}>
+
+          <Button type="dashed" onClick={addItem} block icon={<PlusOutlined />}>
             Add Item
-          </AntButton>
+          </Button>
+
+          <Select
+            value={selectedOrder?.status || ""}
+            onChange={(value) =>
+              setSelectedOrder((prev) => ({ ...prev, status: value }))
+            }
+            className="w-full mt-4"
+          >
+            <Option value="confirmed">
+              <span className="text-green-600 font-semibold">● Confirmed</span>
+            </Option>
+            <Option value="cancelled">
+              <span className="text-red-600 font-semibold">● Cancelled</span>
+            </Option>
+            <Option value="refunded">
+              <span className="text-yellow-500 font-semibold">● Refunded</span>
+            </Option>
+          </Select>
         </div>
       </Modal>
     </div>

@@ -1,19 +1,25 @@
 import React, { useState } from "react";
 import Navbar from "../components/navbar";
 import Footer from "../components/footer";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Password from "../components/password";
+import { useUser } from "../context/usercontext";
 
 const Login = () => {
+  const { loginUser } = useUser();
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
 
   const [errors, setErrors] = useState({});
+  const [serverError, setServerError] = useState("");
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    setServerError(""); // clear error on change
   };
 
   const validateForm = () => {
@@ -32,13 +38,16 @@ const Login = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (validateForm()) {
-      console.log("Logging in:", formData);
-      // handle actual login logic here
+
+    if (!validateForm()) return;
+
+    const res = await loginUser(formData);
+    if (res.success) {
+      navigate("/home");
     } else {
-      console.log("Validation failed.");
+      setServerError(res.message);
     }
   };
 
@@ -86,6 +95,13 @@ const Login = () => {
                 Forgot Password?
               </a>
             </div>
+
+            {/* Backend error bubble */}
+            {serverError && (
+              <div className="bg-red-100 text-red-700 text-sm px-4 py-2 rounded mt-4 mb-4">
+                {serverError}
+              </div>
+            )}
 
             {/* Login Button */}
             <button
