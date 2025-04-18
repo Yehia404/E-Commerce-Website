@@ -12,10 +12,25 @@ export const CartProvider = ({ children }) => {
     return savedCart ? JSON.parse(savedCart) : [];
   });
 
-  const [discountPercentage, setDiscountPercentage] = useState(0);
-  const [subtotal, setSubtotal] = useState(0);
-  const [discount, setDiscount] = useState(0);
-  const [total, setTotal] = useState(0);
+  const [discountPercentage, setDiscountPercentage] = useState(() => {
+    const savedDiscount = localStorage.getItem("discountPercentage");
+    return savedDiscount ? parseFloat(savedDiscount) : 0;
+  });
+
+  const [subtotal, setSubtotal] = useState(() => {
+    const savedSubtotal = localStorage.getItem("subtotal");
+    return savedSubtotal ? parseFloat(savedSubtotal) : 0;
+  });
+
+  const [discount, setDiscount] = useState(() => {
+    const savedDiscount = localStorage.getItem("discount");
+    return savedDiscount ? parseFloat(savedDiscount) : 0;
+  });
+
+  const [total, setTotal] = useState(() => {
+    const savedTotal = localStorage.getItem("total");
+    return savedTotal ? parseFloat(savedTotal) : 0;
+  });
 
   useEffect(() => {
     const newSubtotal = cart.reduce((acc, item) => {
@@ -31,6 +46,10 @@ export const CartProvider = ({ children }) => {
     setTotal(newTotal);
 
     localStorage.setItem("cart", JSON.stringify(cart));
+    localStorage.setItem("subtotal", newSubtotal.toFixed(2));
+    localStorage.setItem("discount", newDiscount.toFixed(2));
+    localStorage.setItem("total", newTotal.toFixed(2));
+    localStorage.setItem("discountPercentage", discountPercentage.toString());
   }, [cart, discountPercentage]);
 
   const addToCart = (product) => {
@@ -71,8 +90,10 @@ export const CartProvider = ({ children }) => {
   const applyPromoCode = (code) => {
     if (code.toUpperCase() === "SAVE20") {
       setDiscountPercentage(20);
+      alert("Promo code applied! You get a 20% discount.");
     } else {
       setDiscountPercentage(0);
+      alert("Invalid promo code.");
     }
   };
 
