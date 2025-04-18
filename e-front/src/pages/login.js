@@ -14,12 +14,17 @@ const Login = () => {
     password: "",
   });
 
+  const [rememberMe, setRememberMe] = useState(false);
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState("");
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     setServerError(""); // clear error on change
+  };
+
+  const handleCheckboxChange = () => {
+    setRememberMe(!rememberMe);
   };
 
   const validateForm = () => {
@@ -43,7 +48,7 @@ const Login = () => {
 
     if (!validateForm()) return;
 
-    const res = await loginUser(formData);
+    const res = await loginUser(formData, rememberMe);
     if (res.success) {
       navigate("/home");
     } else {
@@ -88,7 +93,12 @@ const Login = () => {
             {/* Remember Me & Forgot Password */}
             <div className="flex items-center justify-between mb-6 text-sm text-gray-600">
               <label className="flex items-center">
-                <input type="checkbox" className="mr-2" />
+                <input
+                  type="checkbox"
+                  className="mr-2"
+                  checked={rememberMe}
+                  onChange={handleCheckboxChange}
+                />
                 Remember Me
               </label>
               <a href="#" className="hover:underline">

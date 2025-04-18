@@ -19,9 +19,9 @@ import {
 
 function App() {
   return (
-    <UserProvider>
-      <CartProvider>
-        <Router>
+    <Router>
+      <UserProvider>
+        <CartProvider>
           <Routes>
             <Route path="/" element={<Navigate to="/home" />} />
             <Route path="/home" element={<Home />} />
@@ -34,9 +34,9 @@ function App() {
             <Route path="/admin/*" element={<Admin />} />
             <Route path="/profile" element={<Profile />} />
           </Routes>
-        </Router>
-      </CartProvider>
-    </UserProvider>
+        </CartProvider>
+      </UserProvider>
+    </Router>
   );
 }
 

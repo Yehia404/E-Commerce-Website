@@ -12,9 +12,7 @@ const Navbar = () => {
   const { isLoggedIn, isAdmin, logout } = useUser();
 
   const toggleMenu = () => {
-    if (isLoggedIn) {
-      setIsOpen(!isOpen);
-    }
+    setIsOpen(!isOpen);
   };
 
   const closeMenu = () => {
@@ -55,7 +53,6 @@ const Navbar = () => {
           icon={<MenuOutlined />}
           onClick={toggleMenu}
           type="text"
-          disabled={!isLoggedIn} // Disable button if not logged in
         />
 
         {/* Logo */}

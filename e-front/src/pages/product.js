@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "../components/navbar";
 import Footer from "../components/footer";
 import axios from "axios";
 import { useCart } from "../context/cartcontext";
+import { useUser } from "../context/usercontext"; // Import useUser to access user context
 
 const Product = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [productData, setProductData] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
   const [quantity, setQuantity] = useState(1);
@@ -25,6 +27,7 @@ const Product = () => {
   const [showAddedToCartBubble, setShowAddedToCartBubble] = useState(false);
 
   const { addToCart } = useCart();
+  const { isLoggedIn } = useUser(); // Access isLoggedIn from user context
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -63,6 +66,11 @@ const Product = () => {
   const decreaseQty = () => setQuantity(quantity > 1 ? quantity - 1 : 1);
 
   const handleAddToCart = () => {
+    if (!isLoggedIn) {
+      navigate("/login"); // Redirect to login if not logged in
+      return;
+    }
+
     if (!selectedSize) {
       return;
     }
