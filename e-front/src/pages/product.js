@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import Navbar from "../components/navbar";
 import Footer from "../components/footer";
 import axios from "axios";
+import { useCart } from "../context/cartcontext";
 
 const Product = () => {
   const { id } = useParams();
@@ -21,6 +22,9 @@ const Product = () => {
     user: "",
     comment: "",
   });
+  const [showAddedToCartBubble, setShowAddedToCartBubble] = useState(false);
+
+  const { addToCart } = useCart();
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -53,24 +57,30 @@ const Product = () => {
   }
 
   const increaseQty = () => {
-    if (quantity < 3) setQuantity(quantity + 1);
+    if (quantity < 5) setQuantity(quantity + 1);
   };
 
   const decreaseQty = () => setQuantity(quantity > 1 ? quantity - 1 : 1);
 
   const handleAddToCart = () => {
     if (!selectedSize) {
-      alert("Please select a size.");
       return;
     }
 
-    console.log("Added to cart:", {
-      product: productData.name,
+    const productToAdd = {
+      id: productData._id,
+      name: productData.name,
+      price: productData.price,
       size: selectedSize,
+      image: productData.image,
       quantity,
-    });
+      discount: productData.discount,
+    };
 
-    alert(`Added ${quantity} item(s) of size ${selectedSize} to cart!`);
+    addToCart(productToAdd);
+
+    setShowAddedToCartBubble(true);
+    setTimeout(() => setShowAddedToCartBubble(false), 3000);
   };
 
   const discountedPrice = productData.discount
@@ -127,10 +137,8 @@ const Product = () => {
         user: "",
         comment: "",
       }); // Reset error messages
-      alert("Review submitted!");
     } catch (err) {
       console.error("Error submitting review:", err);
-      alert("Failed to submit review. Please try again.");
     }
   };
 
@@ -228,18 +236,26 @@ const Product = () => {
             <button
               onClick={increaseQty}
               className="px-3 py-1 border rounded-md text-lg"
-              disabled={quantity === 3}
+              disabled={quantity === 5}
             >
               +
             </button>
           </div>
 
-          <button
-            onClick={handleAddToCart}
-            className="px-6 py-3 bg-black text-white rounded-md"
-          >
-            Add to Cart
-          </button>
+          <div className="relative">
+            <button
+              onClick={handleAddToCart}
+              disabled={!selectedSize}
+              className="px-6 py-3 bg-black text-white rounded-md disabled:opacity-50"
+            >
+              Add to Cart
+            </button>
+            {showAddedToCartBubble && (
+              <div className="absolute top-0 right-0 mt-2 mr-2 p-2 bg-green-500 text-white rounded-full text-sm">
+                Added to cart
+              </div>
+            )}
+          </div>
 
           <div className="mt-8">
             <div className="flex border-b mb-4">

@@ -9,6 +9,7 @@ import Checkout from "./pages/checkout";
 import Admin from "./pages/admin";
 import Profile from "./pages/profile";
 import { UserProvider } from "./context/usercontext";
+import { CartProvider } from "./context/cartcontext";
 import {
   BrowserRouter as Router,
   Routes,
@@ -19,20 +20,22 @@ import {
 function App() {
   return (
     <UserProvider>
-      <Router>
-        <Routes>
-          <Route path="/" element={<Navigate to="/home" />} />
-          <Route path="/home" element={<Home />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/shop" element={<Shop />} />
-          <Route path="/cart" element={<Cart />} />
-          <Route path="/product/:id" element={<Product />} />
-          <Route path="/checkout" element={<Checkout />} />
-          <Route path="/admin/*" element={<Admin />} />
-          <Route path="/profile" element={<Profile />} />
-        </Routes>
-      </Router>
+      <CartProvider>
+        <Router>
+          <Routes>
+            <Route path="/" element={<Navigate to="/home" />} />
+            <Route path="/home" element={<Home />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/shop" element={<Shop />} />
+            <Route path="/cart" element={<Cart />} />
+            <Route path="/product/:id" element={<Product />} />
+            <Route path="/checkout" element={<Checkout />} />
+            <Route path="/admin/*" element={<Admin />} />
+            <Route path="/profile" element={<Profile />} />
+          </Routes>
+        </Router>
+      </CartProvider>
     </UserProvider>
   );
 }
