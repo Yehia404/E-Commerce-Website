@@ -10,6 +10,19 @@ const getAllProducts = async (req, res) => {
   }
 };
 
+// Get a product by ID
+const getProductById = async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+    res.json(product);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching product" });
+  }
+};
+
 // Add a new product
 const addProduct = async (req, res) => {
   try {
@@ -106,6 +119,26 @@ const updateProductInventory = async (req, res) => {
   }
 };
 
+// Add a review to a product
+const addReview = async (req, res) => {
+  try {
+    const { user, rating, comment } = req.body;
+    const product = await Product.findById(req.params.id);
+
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    const newReview = { user, rating, comment };
+    product.reviews.push(newReview);
+    await product.save();
+
+    res.status(201).json(product);
+  } catch (error) {
+    res.status(500).json({ message: "Error adding review" });
+  }
+};
+
 module.exports = {
   getAllProducts,
   addProduct,
@@ -113,4 +146,6 @@ module.exports = {
   removeProductByName,
   getInventoryProducts,
   updateProductInventory,
+  getProductById,
+  addReview,
 };

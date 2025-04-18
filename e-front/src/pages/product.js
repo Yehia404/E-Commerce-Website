@@ -1,36 +1,16 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
 import Navbar from "../components/navbar";
 import Footer from "../components/footer";
-import img1 from "../assets/casual.jpg";
-import img2 from "../assets/hero.jpg";
-import img3 from "../assets/casual.jpg";
-
-const productData = {
-  name: "Gradient Graphic T-shirt",
-  description: "A trendy t-shirt perfect for parties and casual wear.",
-  price: 145,
-  discount: 20,
-  images: [img1, img2, img3],
-  sizes: [
-    { size: "XS", stock: 2 },
-    { size: "S", stock: 3 },
-    { size: "M", stock: 1 },
-    { size: "L", stock: 0 },
-    { size: "XL", stock: 0 },
-  ],
-  details: "Made of 100% cotton. Breathable, soft, and stylish.",
-  reviews: [
-    { user: "John", comment: "Great quality!", rating: 5 },
-    { user: "Jane", comment: "Loved the color!", rating: 3 },
-  ],
-};
+import axios from "axios";
 
 const Product = () => {
-  const [selectedImage, setSelectedImage] = useState(productData.images[0]);
+  const { id } = useParams();
+  const [productData, setProductData] = useState(null);
+  const [selectedImage, setSelectedImage] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [selectedSize, setSelectedSize] = useState(null);
   const [activeTab, setActiveTab] = useState("details");
-
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [reviewInput, setReviewInput] = useState({
     user: "",
@@ -41,6 +21,36 @@ const Product = () => {
     user: "",
     comment: "",
   });
+
+  useEffect(() => {
+    const fetchProduct = async () => {
+      try {
+        const response = await axios.get(
+          `http://localhost:5000/api/products/${id}`
+        );
+        const product = response.data;
+
+        // Repeat the single image URL to simulate multiple images
+        const repeatedImages = Array(3).fill(product.image);
+
+        setProductData({
+          ...product,
+          images: repeatedImages,
+        });
+
+        // Set the initial selected image
+        setSelectedImage(repeatedImages[0]);
+      } catch (err) {
+        console.error("Error fetching product:", err);
+      }
+    };
+
+    fetchProduct();
+  }, [id]);
+
+  if (!productData) {
+    return <div>Loading...</div>;
+  }
 
   const increaseQty = () => {
     if (quantity < 3) setQuantity(quantity + 1);
@@ -68,8 +78,10 @@ const Product = () => {
     : productData.price;
 
   const avgRating =
-    productData.reviews.reduce((acc, r) => acc + r.rating, 0) /
-    productData.reviews.length;
+    productData.reviews.length > 0
+      ? productData.reviews.reduce((acc, r) => acc + r.rating, 0) /
+        productData.reviews.length
+      : 0;
 
   const totalStock = productData.sizes.reduce(
     (acc, size) => acc + size.stock,
@@ -78,7 +90,7 @@ const Product = () => {
   const lowStockThreshold = 10;
   const isLowStock = totalStock < lowStockThreshold;
 
-  const handleReviewSubmit = (e) => {
+  const handleReviewSubmit = async (e) => {
     e.preventDefault();
     let errors = { user: "", comment: "" };
 
@@ -96,23 +108,30 @@ const Product = () => {
       return;
     }
 
-    // Submit the review
-    productData.reviews.push(reviewInput);
-    const newAvgRating =
-      productData.reviews.reduce((acc, r) => acc + r.rating, 0) /
-      productData.reviews.length;
-    setShowReviewForm(false); // Close the modal
-    setReviewInput({
-      user: "",
-      comment: "",
-      rating: 5,
-    });
-    setReviewErrors({
-      user: "",
-      comment: "",
-    }); // Reset error messages
-    alert("Review submitted!");
-    console.log("New Avg Rating:", newAvgRating.toFixed(2));
+    try {
+      // Send the review to the backend
+      const response = await axios.post(
+        `http://localhost:5000/api/products/${id}/reviews`,
+        reviewInput
+      );
+
+      // Update the product data with the new review
+      setProductData(response.data);
+      setShowReviewForm(false); // Close the modal
+      setReviewInput({
+        user: "",
+        comment: "",
+        rating: 5,
+      });
+      setReviewErrors({
+        user: "",
+        comment: "",
+      }); // Reset error messages
+      alert("Review submitted!");
+    } catch (err) {
+      console.error("Error submitting review:", err);
+      alert("Failed to submit review. Please try again.");
+    }
   };
 
   return (

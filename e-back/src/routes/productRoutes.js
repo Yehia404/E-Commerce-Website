@@ -7,6 +7,8 @@ const {
   removeProductByName,
   getInventoryProducts,
   updateProductInventory,
+  getProductById,
+  addReview,
 } = require("../controllers/productController");
 
 // Get all products
@@ -20,6 +22,12 @@ router.get("/inventory", getInventoryProducts);
 
 // Update product inventory by ID
 router.put("/inventory/:id", updateProductInventory);
+
+// Get a product by ID
+router.get("/:id", getProductById);
+
+// Add a review to a product
+router.post("/:id/reviews", addReview);
 
 // Edit a product by name
 router.put("/:name", editProductByName);

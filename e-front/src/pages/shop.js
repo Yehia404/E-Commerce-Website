@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Navbar from "../components/navbar";
 import Footer from "../components/footer";
 import FilterPanel from "../components/filterpanel";
@@ -15,6 +16,7 @@ const Shop = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const productsPerPage = 4;
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -126,7 +128,11 @@ const Shop = () => {
                     ) / totalReviews;
 
                   return (
-                    <div key={product.id} className="group">
+                    <div
+                      key={product._id}
+                      className="group cursor-pointer"
+                      onClick={() => navigate(`/product/${product._id}`)}
+                    >
                       <div className="w-full pb-[100%] relative mb-4">
                         <img
                           src={product.image}
