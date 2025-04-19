@@ -3,23 +3,10 @@ import { FaStar } from "react-icons/fa";
 import Hero from "../assets/hero.jpg";
 import Navbar from "../components/navbar";
 import Footer from "../components/footer";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
+import axios from "axios";
 import "react-toastify/dist/ReactToastify.css";
-
-const newArrivals = [
-  { id: 1, name: "Trendy Jacket", price: 120 },
-  { id: 2, name: "Classic Tee", price: 240 },
-  { id: 3, name: "Stylish Jeans", price: 180 },
-  { id: 4, name: "Modern Hoodie", price: 130 },
-];
-
-const topSelling = [
-  { id: 1, name: "Best Hoodie", price: 212 },
-  { id: 2, name: "Slim Fit Shirt", price: 145 },
-  { id: 3, name: "Cool Shorts", price: 80 },
-  { id: 4, name: "Denim Jacket", price: 210 },
-];
 
 const testimonials = [
   {
@@ -53,30 +40,45 @@ const testimonials = [
 ];
 
 const Home = () => {
+  const [newArrivals, setNewArrivals] = useState([]);
+  const [collection, setCollection] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchNewArrivals = async () => {
+      try {
+        const response = await axios.get(
+          "http://localhost:5000/api/products/newarrivals"
+        );
+        setNewArrivals(response.data.slice(0, 4));
+      } catch (error) {
+        console.error("Error fetching new arrivals:", error);
+      }
+    };
+
+    const fetchCollection = async () => {
+      try {
+        const response = await axios.get(
+          "http://localhost:5000/api/products/collection"
+        );
+        setCollection(response.data.slice(0, 4));
+      } catch (error) {
+        console.error("Error fetching collection items:", error);
+      }
+    };
+
+    fetchNewArrivals();
+    fetchCollection();
+  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentIndex((prevIndex) => (prevIndex + 1) % testimonials.length);
-    }, 3000); // 3 seconds
+    }, 3000);
 
     return () => clearInterval(interval);
   }, []);
-
-  useEffect(() => {
-    if (location.state?.showToast) {
-      toast.success("Order created successfully!", {
-        position: "top-right",
-        autoClose: 5000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-      });
-    }
-  }, [location.state]);
 
   const getVisibleTestimonials = () => {
     const visible = [];
@@ -86,19 +88,26 @@ const Home = () => {
     return visible;
   };
 
+  const calculateDiscountedPrice = (price, discount) => {
+    return price - (price * discount) / 100;
+  };
+
+  const calculateAverageRating = (reviews) => {
+    if (reviews.length === 0) return 0;
+    const totalRating = reviews.reduce((acc, review) => acc + review.rating, 0);
+    return totalRating / reviews.length;
+  };
+
   return (
     <div className="font-sans">
       <ToastContainer />
-      {/* Top Discount Banner */}
       <div className="bg-black text-white text-sm text-center py-2">
         Sign up now to get 20% off your first order!{" "}
         <span className="underline cursor-pointer">Sign Up Now</span>
       </div>
 
-      {/* Navbar */}
       <Navbar />
 
-      {/* Hero Section */}
       <section className="bg-gray-100 py-12 px-6 lg:flex justify-between items-center">
         <div className="lg:w-1/2 space-y-6">
           <h1 className="text-4xl font-bold leading-tight">
@@ -139,63 +148,135 @@ const Home = () => {
         </div>
       </section>
 
-      {/* New Arrivals */}
       <section className="px-6 py-10">
         <h2 className="text-2xl font-bold mb-6">NEW ARRIVALS</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          {newArrivals.map((item) => (
-            <div key={item.id} className="border p-4 rounded-md">
-              <div className="h-40 bg-gray-200 mb-4"></div>
-              <p className="font-semibold">{item.name}</p>
-              <div className="flex items-center text-yellow-500 text-sm">
-                {[...Array(5)].map((_, i) => (
-                  <FaStar key={i} />
-                ))}
+          {newArrivals.map((item) => {
+            const discountedPrice = calculateDiscountedPrice(
+              item.price,
+              item.discount
+            );
+            const averageRating = calculateAverageRating(item.reviews);
+
+            return (
+              <div
+                key={item._id}
+                className="border p-4 rounded-md cursor-pointer"
+                onClick={() => navigate(`/product/${item._id}`)}
+              >
+                <div className="relative pb-[100%] mb-4 overflow-hidden rounded-md">
+                  <img
+                    src={item.image}
+                    alt={item.name}
+                    className="absolute h-full w-full object-cover"
+                  />
+                </div>
+                <p className="font-semibold">{item.name}</p>
+                <div className="flex items-center text-yellow-500 text-sm">
+                  {[...Array(5)].map((_, i) => (
+                    <FaStar
+                      key={i}
+                      className={
+                        i < Math.floor(averageRating)
+                          ? "text-yellow-500"
+                          : "text-gray-300"
+                      }
+                    />
+                  ))}
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="font-bold">
+                    ${discountedPrice.toFixed(2)}
+                  </span>
+                  {item.price !== discountedPrice && (
+                    <span className="text-gray-500 line-through">
+                      ${item.price.toFixed(2)}
+                    </span>
+                  )}
+                </div>
               </div>
-              <p className="font-bold">${item.price}</p>
-            </div>
-          ))}
+            );
+          })}
         </div>
-        <button className="block mt-6 mx-auto bg-black text-white px-12 py-2 rounded-full">
+        <button
+          onClick={() => navigate("/shop")}
+          className="block mt-6 mx-auto bg-black text-white px-12 py-2 rounded-full"
+        >
           View All
         </button>
       </section>
 
-      {/* Top Selling */}
       <section className="px-6 py-10">
-        <h2 className="text-2xl font-bold mb-6">TOP SELLING</h2>
+        <h2 className="text-2xl font-bold mb-6">COLLECTION</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          {topSelling.map((item) => (
-            <div key={item.id} className="border p-4 rounded-md">
-              <div className="h-40 bg-gray-200 mb-4"></div>
-              <p className="font-semibold">{item.name}</p>
-              <div className="flex items-center text-yellow-500 text-sm">
-                {[...Array(5)].map((_, i) => (
-                  <FaStar key={i} />
-                ))}
+          {collection.map((item) => {
+            const discountedPrice = calculateDiscountedPrice(
+              item.price,
+              item.discount
+            );
+            const averageRating = calculateAverageRating(item.reviews);
+
+            return (
+              <div
+                key={item._id}
+                className="border p-4 rounded-md cursor-pointer"
+                onClick={() => navigate(`/product/${item._id}`)}
+              >
+                <div className="relative pb-[100%] mb-4 overflow-hidden rounded-md">
+                  <img
+                    src={item.image}
+                    alt={item.name}
+                    className="absolute h-full w-full object-cover"
+                  />
+                </div>
+                <p className="font-semibold">{item.name}</p>
+                <div className="flex items-center text-yellow-500 text-sm">
+                  {[...Array(5)].map((_, i) => (
+                    <FaStar
+                      key={i}
+                      className={
+                        i < Math.floor(averageRating)
+                          ? "text-yellow-500"
+                          : "text-gray-300"
+                      }
+                    />
+                  ))}
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="font-bold">
+                    ${discountedPrice.toFixed(2)}
+                  </span>
+                  {item.price !== discountedPrice && (
+                    <span className="text-gray-500 line-through">
+                      ${item.price.toFixed(2)}
+                    </span>
+                  )}
+                </div>
               </div>
-              <p className="font-bold">${item.price}</p>
-            </div>
-          ))}
+            );
+          })}
         </div>
-        <button className="block mt-6 mx-auto bg-black text-white px-12 py-2 rounded-full">
+        <button
+          onClick={() => navigate("/shop")}
+          className="block mt-6 mx-auto bg-black text-white px-12 py-2 rounded-full"
+        >
           View All
         </button>
       </section>
 
-      {/* Browse by Dress Style */}
       <section className="bg-gray-100 px-6 py-10">
         <h2 className="text-2xl font-bold mb-6 text-center">
           BROWSE BY DRESS STYLE
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {["Casual", "Formal", "Party", "Gym"].map((style, i) => (
+          {["Casual", "Formal", "Party", "Sport"].map((style, i) => (
             <div
               key={i}
               className="relative group h-40 bg-cover bg-center rounded-md shadow-md"
               style={{
                 backgroundImage: `url(${require(`../assets/casual.jpg`)})`,
               }}
+              onClick={() => navigate(`/shop?style=${style.toLowerCase()}`)}
             >
               <div className="absolute inset-0 bg-black opacity-50 group-hover:opacity-30 transition-all duration-300"></div>
               <div className="absolute inset-0 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all duration-300">
@@ -211,7 +292,6 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Auto-Rotating Testimonials */}
       <section className="px-6 py-10">
         <h2 className="text-2xl font-bold mb-6 text-center">
           OUR HAPPY CUSTOMERS
@@ -231,7 +311,6 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Footer */}
       <Footer />
     </div>
   );

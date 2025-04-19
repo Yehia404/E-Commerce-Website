@@ -141,9 +141,30 @@ const addReview = async (req, res) => {
     res.status(500).json({ message: "Error adding review" });
   }
 };
+// Get new arrivals
+const getNewArrivals = async (req, res) => {
+  try {
+    const products = await Product.find().sort({ createdAt: -1 }).limit(4);
+    res.status(200).json(products);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Get collection items
+const getCollectionItems = async (req, res) => {
+  try {
+    const products = await Product.find().limit(4);
+    res.status(200).json(products);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
 
 module.exports = {
   getAllProducts,
+  getNewArrivals,
+  getCollectionItems,
   addProduct,
   editProductByName,
   removeProductByName,

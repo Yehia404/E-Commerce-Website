@@ -23,14 +23,20 @@ const Shop = () => {
   useEffect(() => {
     const queryParams = new URLSearchParams(location.search);
     const gender = queryParams.get("gender");
+    const style = queryParams.get("style");
 
     // Reset filters if navigating to "Shop All"
-    if (location.pathname === "/shop" && !gender) {
+    if (location.pathname === "/shop" && !gender && !style) {
       setSelectedSize(null);
       setSelectedStyle([]);
       setSelectedGender(null);
-    } else if (gender) {
-      setSelectedGender(gender);
+    } else {
+      if (gender) {
+        setSelectedGender(gender);
+      }
+      if (style) {
+        setSelectedStyle([style.charAt(0).toUpperCase() + style.slice(1)]);
+      }
     }
 
     const fetchProducts = async () => {

@@ -10,10 +10,18 @@ const {
   updateProductInventory,
   getProductById,
   addReview,
+  getNewArrivals,
+  getCollectionItems,
 } = require("../controllers/productController");
 
 // Get all products
 router.get("/allproducts", getAllProducts);
+
+// Get new arrivals
+router.get("/newarrivals", getNewArrivals);
+
+// Get collection items
+router.get("/collection", getCollectionItems);
 
 // Add a new product
 router.post("/addproduct", authMiddleware, addProduct);
