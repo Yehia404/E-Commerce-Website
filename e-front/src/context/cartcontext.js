@@ -12,10 +12,12 @@ export const CartProvider = ({ children }) => {
     return savedCart ? JSON.parse(savedCart) : [];
   });
 
-  const [discountPercentage, setDiscountPercentage] = useState(() => {
-    const savedDiscount = localStorage.getItem("discountPercentage");
-    return savedDiscount ? parseFloat(savedDiscount) : 0;
-  });
+  const [discountPercentage, setDiscountPercentage] = useState(0);
+
+  // () => {
+  //   const savedDiscount = localStorage.getItem("discountPercentage");
+  //   return savedDiscount ? parseFloat(savedDiscount) : 0;
+  // };
 
   const [subtotal, setSubtotal] = useState(() => {
     const savedSubtotal = localStorage.getItem("subtotal");
@@ -49,7 +51,7 @@ export const CartProvider = ({ children }) => {
     localStorage.setItem("subtotal", newSubtotal.toFixed(2));
     localStorage.setItem("discount", newDiscount.toFixed(2));
     localStorage.setItem("total", newTotal.toFixed(2));
-    localStorage.setItem("discountPercentage", discountPercentage.toString());
+    // localStorage.setItem("discountPercentage", discountPercentage.toString());
   }, [cart, discountPercentage]);
 
   const addToCart = (product) => {
@@ -101,13 +103,18 @@ export const CartProvider = ({ children }) => {
     <CartContext.Provider
       value={{
         cart,
+        setCart,
         addToCart,
         updateQuantity,
         removeItem,
         subtotal,
+        setSubtotal, // Include setter
         discount,
+        setDiscount, // Include setter
         total,
+        setTotal, // Include setter
         discountPercentage,
+        setDiscountPercentage, // Include setter
         applyPromoCode,
       }}
     >

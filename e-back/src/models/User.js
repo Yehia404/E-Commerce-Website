@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const orderSchema = require("./Order").schema;
 
 const userSchema = new mongoose.Schema(
   {
@@ -35,6 +36,12 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    image: {
+      type: String,
+      required: false,
+      default: null,
+    },
+    orders: [orderSchema],
   },
   {
     timestamps: true, // adds createdAt and updatedAt

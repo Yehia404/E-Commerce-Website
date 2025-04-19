@@ -13,7 +13,7 @@ const Cart = () => {
     subtotal,
     discount,
     total,
-    discountPercentage, // Destructure this from the context
+    discountPercentage,
     applyPromoCode,
   } = useCart();
   const [currentPage, setCurrentPage] = useState(1);
@@ -125,7 +125,14 @@ const Cart = () => {
 
             <Link
               to="/Checkout"
-              className="w-full bg-black text-white py-3 rounded-full hover:bg-gray-800 flex items-center justify-center gap-2"
+              className={`w-full py-3 rounded-full flex items-center justify-center gap-2 ${
+                cart.length === 0
+                  ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  : "bg-black text-white hover:bg-gray-800"
+              }`}
+              onClick={(e) => {
+                if (cart.length === 0) e.preventDefault();
+              }}
             >
               Go to Checkout →
             </Link>

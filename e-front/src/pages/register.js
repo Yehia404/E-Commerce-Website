@@ -59,7 +59,7 @@ const Register = () => {
     const res = await registerUser(formData);
 
     if (res.success) {
-      navigate("/login");
+      navigate("/login", { state: { showToast: true } });
     } else {
       setServerError(res.message);
     }

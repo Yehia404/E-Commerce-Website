@@ -1,6 +1,7 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
+const Order = require("../models/Order");
 
 // Register User
 const registerUser = async (req, res) => {
@@ -84,4 +85,54 @@ const loginUser = async (req, res) => {
   }
 };
 
-module.exports = { registerUser, loginUser };
+// Create Order
+const createOrder = async (req, res) => {
+  const userId = req.user.userId; // Extract userId from token
+  const {
+    firstname,
+    lastname,
+    phone,
+    email,
+    products,
+    totalPrice,
+    paymentMethod,
+    shippingAddress,
+    area,
+  } = req.body;
+
+  try {
+    // Validate user existence
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Create a new order
+    const order = new Order({
+      firstname,
+      lastname,
+      phone,
+      email,
+      products,
+      totalPrice,
+      paymentMethod,
+      shippingAddress,
+      area,
+      status: "confirmed", // Default status
+    });
+
+    await order.save();
+    // Save the order to the user's orders array
+    user.orders.push(order);
+    await user.save();
+
+    res.status(201).json({
+      message: "Order created successfully",
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+module.exports = { registerUser, loginUser, createOrder };

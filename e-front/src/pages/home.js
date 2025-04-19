@@ -3,7 +3,9 @@ import { FaStar } from "react-icons/fa";
 import Hero from "../assets/hero.jpg";
 import Navbar from "../components/navbar";
 import Footer from "../components/footer";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const newArrivals = [
   { id: 1, name: "Trendy Jacket", price: 120 },
@@ -52,6 +54,7 @@ const testimonials = [
 
 const Home = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const location = useLocation();
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -60,6 +63,20 @@ const Home = () => {
 
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    if (location.state?.showToast) {
+      toast.success("Order created successfully!", {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+      });
+    }
+  }, [location.state]);
 
   const getVisibleTestimonials = () => {
     const visible = [];
@@ -71,6 +88,7 @@ const Home = () => {
 
   return (
     <div className="font-sans">
+      <ToastContainer />
       {/* Top Discount Banner */}
       <div className="bg-black text-white text-sm text-center py-2">
         Sign up now to get 20% off your first order!{" "}

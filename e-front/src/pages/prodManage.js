@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Modal, Table, Tag, Button, message } from "antd";
+import { Modal, Table, Tag, message } from "antd";
 import axios from "axios";
 
 const ProdManage = () => {
@@ -16,7 +16,6 @@ const ProdManage = () => {
   });
   const [errors, setErrors] = useState({});
   const [backendError, setBackendError] = useState("");
-  const [editingProduct, setEditingProduct] = useState(null);
   const [isEditMode, setIsEditMode] = useState(false);
 
   const allowedSizes = ["XS", "S", "M", "L", "XL"];
@@ -65,7 +64,6 @@ const ProdManage = () => {
     });
     setErrors({});
     setBackendError("");
-    setEditingProduct(null);
   };
 
   const handleChange = (e) => {

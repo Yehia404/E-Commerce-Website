@@ -1,13 +1,27 @@
 import React, { useState, useEffect } from "react";
 import Navbar from "../components/navbar";
 import Footer from "../components/footer";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../context/cartcontext";
 import { useUser } from "../context/usercontext";
+import axios from "axios";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 function CheckoutPage() {
-  const { subtotal, discount, total, discountPercentage } = useCart();
-  const { user } = useUser();
+  const {
+    cart,
+    subtotal,
+    discount,
+    total,
+    discountPercentage,
+    setCart,
+    setTotal,
+    setDiscount,
+    setSubtotal,
+  } = useCart();
+  const { user, token } = useUser();
+  const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
     firstName: user?.firstname || "",
@@ -26,7 +40,6 @@ function CheckoutPage() {
   const [errors, setErrors] = useState({});
   const [deliveryFee, setDeliveryFee] = useState(0);
 
-  // Define the area list
   const areaList = [
     { name: "Cairo", fee: 20 },
     { name: "Giza", fee: 30 },
@@ -70,7 +83,7 @@ function CheckoutPage() {
         else delete errs[field];
         break;
       case "phoneNumber":
-        if (!/^\d{10}$/.test(value)) errs.phoneNumber = "Must be 10 digits";
+        if (!/^\d{11}$/.test(value)) errs.phoneNumber = "Must be 11 digits";
         else delete errs.phoneNumber;
         break;
       case "cardNumber":
@@ -108,8 +121,8 @@ function CheckoutPage() {
     if (!formData.firstName.trim()) errs.firstName = "Required";
     if (!formData.lastName.trim()) errs.lastName = "Required";
     if (!formData.address.trim()) errs.address = "Required";
-    if (!/^\d{10}$/.test(formData.phoneNumber))
-      errs.phoneNumber = "Must be 10 digits";
+    if (!/^\d{11}$/.test(formData.phoneNumber))
+      errs.phoneNumber = "Must be 11 digits";
     if (!formData.email.trim()) errs.email = "Required";
     if (formData.method === "mastercard" || formData.method === "visa") {
       if (!formData.cardName.trim()) errs.cardName = "Required";
@@ -126,9 +139,61 @@ function CheckoutPage() {
     return Object.keys(errs).length === 0;
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (validate()) {
-      alert("Payment info is valid and submitted!");
+      let paymentMethod;
+      if (formData.method === "mastercard" || formData.method === "visa") {
+        paymentMethod = "Credit Card";
+      } else if (formData.method === "cod") {
+        paymentMethod = "COD";
+      }
+
+      const orderData = {
+        firstname: formData.firstName,
+        lastname: formData.lastName,
+        phone: formData.phoneNumber,
+        email: formData.email,
+        products: cart.map((item) => ({
+          name: item.name,
+          price: item.price,
+          size: item.size,
+          image: item.image,
+          quantity: item.quantity,
+          discount: item.discount,
+        })),
+        totalPrice: total + deliveryFee,
+        paymentMethod: paymentMethod,
+        shippingAddress: formData.address,
+        area: formData.area,
+      };
+
+      try {
+        const response = await axios.post(
+          "http://localhost:5000/api/users/orders",
+          orderData,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        // Clear the cart and related local storage items
+        setCart([]);
+        setSubtotal(0);
+        setDiscount(0);
+        setTotal(0);
+        localStorage.removeItem("cart");
+        localStorage.removeItem("subtotal");
+        localStorage.removeItem("discount");
+        localStorage.removeItem("total");
+
+        // Navigate to home and pass state for toast notification
+        navigate("/home", { state: { showToast: true } });
+      } catch (error) {
+        console.error("Error creating order:", error);
+        alert("There was an error processing your order. Please try again.");
+      }
     }
   };
 
@@ -410,6 +475,7 @@ function CheckoutPage() {
         </div>
       </div>
       <Footer />
+      <ToastContainer />
     </div>
   );
 }

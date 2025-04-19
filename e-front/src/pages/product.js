@@ -91,6 +91,14 @@ const Product = () => {
     setTimeout(() => setShowAddedToCartBubble(false), 3000);
   };
 
+  const handleWriteReview = () => {
+    if (!isLoggedIn) {
+      navigate("/login"); // Redirect to login if not logged in
+    } else {
+      setShowReviewForm(true);
+    }
+  };
+
   const discountedPrice = productData.discount
     ? productData.price - (productData.price * productData.discount) / 100
     : productData.price;
@@ -304,7 +312,7 @@ const Product = () => {
                   {/* Write Review Button */}
                   <div className="flex justify-end">
                     <button
-                      onClick={() => setShowReviewForm(true)}
+                      onClick={handleWriteReview}
                       className="mt-4 text-sm text-white bg-black px-4 py-2 rounded-md hover:bg-gray-800"
                     >
                       Write a Review
