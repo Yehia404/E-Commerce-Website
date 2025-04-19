@@ -5,8 +5,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../context/cartcontext";
 import { useUser } from "../context/usercontext";
 import axios from "axios";
-import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 
 function CheckoutPage() {
   const {
@@ -475,7 +473,6 @@ function CheckoutPage() {
         </div>
       </div>
       <Footer />
-      <ToastContainer />
     </div>
   );
 }

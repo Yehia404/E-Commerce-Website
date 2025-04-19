@@ -135,4 +135,57 @@ const createOrder = async (req, res) => {
   }
 };
 
-module.exports = { registerUser, loginUser, createOrder };
+// Get All Orders
+const getAllOrders = async (req, res) => {
+  try {
+    const orders = await Order.find();
+    res.status(200).json(orders);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+const editStatus = async (req, res) => {
+  const { id } = req.params; // Order ID
+  const { status } = req.body;
+
+  try {
+    // Find the order by ID
+    const order = await Order.findById(id);
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    // Update the order status
+    order.status = status;
+    await order.save();
+
+    // Find the user associated with this order
+    const user = await User.findOne({ "orders._id": id });
+    if (user) {
+      // Update the status in the user's orders array
+      const userOrder = user.orders.id(id);
+      if (userOrder) {
+        userOrder.status = status;
+        await user.save();
+      }
+    }
+
+    res.status(200).json({
+      message: "Order status updated successfully",
+      order,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+module.exports = {
+  registerUser,
+  loginUser,
+  createOrder,
+  getAllOrders,
+  editStatus,
+};

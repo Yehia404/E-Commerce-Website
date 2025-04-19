@@ -1,7 +1,20 @@
 const mongoose = require("mongoose");
 
+// Define the counter schema
+const counterSchema = new mongoose.Schema({
+  _id: { type: String, required: true },
+  seq: { type: Number, default: 0 },
+});
+
+// Create the Counter model
+const Counter = mongoose.model("Counter", counterSchema);
+
 // Define the order schema
 const orderSchema = new mongoose.Schema({
+  orderId: {
+    type: Number,
+    unique: true,
+  },
   firstname: {
     type: String,
     required: [true, "Firstname is required"],
@@ -74,5 +87,26 @@ const orderSchema = new mongoose.Schema({
   },
 });
 
+// Pre-save hook to increment orderId
+orderSchema.pre("save", async function (next) {
+  if (this.isNew) {
+    try {
+      const counter = await Counter.findByIdAndUpdate(
+        { _id: "orderId" },
+        { $inc: { seq: 1 } },
+        { new: true, upsert: true }
+      );
+      this.orderId = counter.seq;
+      next();
+    } catch (error) {
+      next(error);
+    }
+  } else {
+    next();
+  }
+});
+
+// Create the Order model
 const Order = mongoose.model("Order", orderSchema);
+
 module.exports = Order;
