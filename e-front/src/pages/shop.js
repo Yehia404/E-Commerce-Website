@@ -16,6 +16,7 @@ const Shop = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [sortOrder, setSortOrder] = useState("lowToHigh");
+  const [search, setSearch] = useState("");
   const productsPerPage = 4;
   const navigate = useNavigate();
   const location = useLocation();
@@ -24,9 +25,9 @@ const Shop = () => {
     const queryParams = new URLSearchParams(location.search);
     const gender = queryParams.get("gender");
     const style = queryParams.get("style");
+    setSearch(queryParams.get("search"));
 
-    // Reset filters if navigating to "Shop All"
-    if (location.pathname === "/shop" && !gender && !style) {
+    if (location.pathname === "/shop" && !gender && !style && !search) {
       setSelectedSize(null);
       setSelectedStyle([]);
       setSelectedGender(null);
@@ -72,13 +73,13 @@ const Shop = () => {
     setSelectedGender(gender === selectedGender ? null : gender);
   };
 
-  // Calculate discounted price
   const calculateDiscountedPrice = (price, discount) => {
     return price - (price * discount) / 100;
   };
 
+  // Use the search variable here
   const filteredProducts = products
-    .filter((product) => product.available) // Check if the product is available
+    .filter((product) => product.available)
     .filter(
       (product) =>
         !selectedSize ||
@@ -96,6 +97,12 @@ const Shop = () => {
         !selectedGender ||
         product.gender.toLowerCase() === selectedGender.toLowerCase()
     )
+    .filter(
+      (product) =>
+        !search || // Ensure search is used within the same scope
+        product.name.toLowerCase().includes(search.toLowerCase()) ||
+        product.description.toLowerCase().includes(search.toLowerCase())
+    )
     .sort((a, b) =>
       sortOrder === "lowToHigh" ? a.price - b.price : b.price - a.price
     );
@@ -111,7 +118,6 @@ const Shop = () => {
       <Navbar />
 
       <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Mobile Filters Button */}
         <div className="block md:hidden mb-4">
           <button
             onClick={() => setShowFilters(true)}
@@ -121,9 +127,7 @@ const Shop = () => {
           </button>
         </div>
 
-        {/* Main Content */}
         <div className="flex flex-col md:flex-row gap-8 items-start">
-          {/* Desktop Filter Sidebar */}
           <div className="hidden md:block">
             <FilterPanel
               selectedSize={selectedSize}
@@ -135,7 +139,6 @@ const Shop = () => {
             />
           </div>
 
-          {/* Product Grid */}
           <div className="flex-1 w-full">
             {loading ? (
               <div>Loading products...</div>
@@ -223,7 +226,6 @@ const Shop = () => {
           </div>
         </div>
 
-        {/* Pagination Controls */}
         <div className="flex justify-center mt-8 space-x-2">
           <button
             onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
@@ -257,7 +259,6 @@ const Shop = () => {
         </div>
       </div>
 
-      {/* Mobile Filter Panel */}
       {showFilters && (
         <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center md:hidden">
           <div className="bg-white rounded-lg p-6 w-[90%] max-w-md max-h-[90vh] overflow-y-auto shadow-xl relative">
