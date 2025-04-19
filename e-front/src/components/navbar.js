@@ -124,12 +124,12 @@ const Navbar = () => {
               Shop All
             </li>
           </Link>
-          <Link to="/new-arrivals">
+          <Link to="/shop?gender=Men">
             <li className="cursor-pointer hover:bg-gray-300 p-2 rounded">
               Men
             </li>
           </Link>
-          <Link to="/brands">
+          <Link to="/shop?gender=Women">
             <li className="cursor-pointer hover:bg-gray-300 p-2 rounded">
               Women
             </li>

@@ -57,6 +57,11 @@ const productSchema = new mongoose.Schema(
       required: [true, "Product style is required"],
       trim: true,
     },
+    gender: {
+      type: String,
+      enum: ["Men", "Women", "Unisex"],
+      required: [true, "Product gender is required"],
+    },
     reviews: [
       {
         user: {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import Navbar from "../components/navbar";
 import Footer from "../components/footer";
 import FilterPanel from "../components/filterpanel";
@@ -8,17 +8,31 @@ import "../styles/slider.css";
 
 const Shop = () => {
   const [products, setProducts] = useState([]);
-  const [priceRange, setPriceRange] = useState([50, 250]);
   const [selectedSize, setSelectedSize] = useState(null);
   const [selectedStyle, setSelectedStyle] = useState([]);
+  const [selectedGender, setSelectedGender] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [sortOrder, setSortOrder] = useState("lowToHigh");
   const productsPerPage = 4;
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
+    const queryParams = new URLSearchParams(location.search);
+    const gender = queryParams.get("gender");
+
+    // Reset filters if navigating to "Shop All"
+    if (location.pathname === "/shop" && !gender) {
+      setSelectedSize(null);
+      setSelectedStyle([]);
+      setSelectedGender(null);
+    } else if (gender) {
+      setSelectedGender(gender);
+    }
+
     const fetchProducts = async () => {
       try {
         const response = await axios.get(
@@ -34,7 +48,7 @@ const Shop = () => {
     };
 
     fetchProducts();
-  }, []);
+  }, [location.pathname, location.search]);
 
   const handleSizeClick = (size) => {
     setSelectedSize(size === selectedSize ? null : size);
@@ -48,16 +62,17 @@ const Shop = () => {
     );
   };
 
+  const handleGenderClick = (gender) => {
+    setSelectedGender(gender === selectedGender ? null : gender);
+  };
+
   // Calculate discounted price
   const calculateDiscountedPrice = (price, discount) => {
     return price - (price * discount) / 100;
   };
 
   const filteredProducts = products
-    .filter(
-      (product) =>
-        product.price >= priceRange[0] && product.price <= priceRange[1]
-    )
+    .filter((product) => product.available) // Check if the product is available
     .filter(
       (product) =>
         !selectedSize ||
@@ -70,7 +85,14 @@ const Shop = () => {
           product.style.toLowerCase().includes(style.toLowerCase())
         )
     )
-    .sort((a, b) => b.price - a.price);
+    .filter(
+      (product) =>
+        !selectedGender ||
+        product.gender.toLowerCase() === selectedGender.toLowerCase()
+    )
+    .sort((a, b) =>
+      sortOrder === "lowToHigh" ? a.price - b.price : b.price - a.price
+    );
 
   const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
   const paginatedProducts = filteredProducts.slice(
@@ -98,12 +120,12 @@ const Shop = () => {
           {/* Desktop Filter Sidebar */}
           <div className="hidden md:block">
             <FilterPanel
-              priceRange={priceRange}
-              setPriceRange={setPriceRange}
               selectedSize={selectedSize}
               handleSizeClick={handleSizeClick}
               selectedStyle={selectedStyle}
               handleStyleClick={handleStyleClick}
+              selectedGender={selectedGender}
+              handleGenderClick={handleGenderClick}
             />
           </div>
 
@@ -114,70 +136,82 @@ const Shop = () => {
             ) : error ? (
               <div className="text-red-500">{error}</div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {paginatedProducts.map((product) => {
-                  const discountedPrice = calculateDiscountedPrice(
-                    product.price,
-                    product.discount
-                  );
-                  const totalReviews = product.reviews.length;
-                  const averageRating =
-                    product.reviews.reduce(
-                      (acc, curr) => acc + curr.rating,
-                      0
-                    ) / totalReviews;
+              <div>
+                <div className="flex justify-end mb-4">
+                  <select
+                    value={sortOrder}
+                    onChange={(e) => setSortOrder(e.target.value)}
+                    className="px-4 py-2 border rounded-md bg-white"
+                  >
+                    <option value="lowToHigh">Price: Low to High</option>
+                    <option value="highToLow">Price: High to Low</option>
+                  </select>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {paginatedProducts.map((product) => {
+                    const discountedPrice = calculateDiscountedPrice(
+                      product.price,
+                      product.discount
+                    );
+                    const totalReviews = product.reviews.length;
+                    const averageRating =
+                      product.reviews.reduce(
+                        (acc, curr) => acc + curr.rating,
+                        0
+                      ) / totalReviews;
 
-                  return (
-                    <div
-                      key={product._id}
-                      className="group cursor-pointer"
-                      onClick={() => navigate(`/product/${product._id}`)}
-                    >
-                      <div className="w-full pb-[100%] relative mb-4">
-                        <img
-                          src={product.image}
-                          alt={product.name}
-                          className="absolute top-0 left-0 w-full h-full object-cover rounded-lg"
-                        />
-                      </div>
+                    return (
+                      <div
+                        key={product._id}
+                        className="group cursor-pointer"
+                        onClick={() => navigate(`/product/${product._id}`)}
+                      >
+                        <div className="w-full pb-[100%] relative mb-4">
+                          <img
+                            src={product.image}
+                            alt={product.name}
+                            className="absolute top-0 left-0 w-full h-full object-cover rounded-lg"
+                          />
+                        </div>
 
-                      <div className="space-y-2">
-                        <h3 className="font-medium">{product.name}</h3>
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold">
-                            ${discountedPrice.toFixed(2)}
-                          </span>
-                          {product.price !== discountedPrice && (
-                            <span className="text-gray-500 line-through">
-                              ${product.price}
+                        <div className="space-y-2">
+                          <h3 className="font-medium">{product.name}</h3>
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold">
+                              ${discountedPrice.toFixed(2)}
                             </span>
-                          )}
-                        </div>
-                        <div className="flex items-center">
-                          <div className="flex text-yellow-400">
-                            {[...Array(5)].map((_, i) => (
-                              <span
-                                key={i}
-                                className={`w-4 h-4 ${
-                                  i < Math.floor(averageRating)
-                                    ? "text-yellow-400"
-                                    : i < averageRating
-                                    ? "text-yellow-300"
-                                    : "text-gray-300"
-                                }`}
-                              >
-                                ★
+                            {product.price !== discountedPrice && (
+                              <span className="text-gray-500 line-through">
+                                ${product.price}
                               </span>
-                            ))}
+                            )}
                           </div>
-                          <span className="text-sm text-gray-500 ml-2">
-                            ({totalReviews} reviews)
-                          </span>
+                          <div className="flex items-center">
+                            <div className="flex text-yellow-400">
+                              {[...Array(5)].map((_, i) => (
+                                <span
+                                  key={i}
+                                  className={`w-4 h-4 ${
+                                    i < Math.floor(averageRating)
+                                      ? "text-yellow-400"
+                                      : i < averageRating
+                                      ? "text-yellow-300"
+                                      : "text-gray-300"
+                                  }`}
+                                >
+                                  ★
+                                </span>
+                              ))}
+                            </div>
+                            <span className="text-sm text-gray-500 ml-2">
+                              ({totalReviews} reviews)
+                            </span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
             )}
           </div>
@@ -228,12 +262,12 @@ const Shop = () => {
               ✕
             </button>
             <FilterPanel
-              priceRange={priceRange}
-              setPriceRange={setPriceRange}
               selectedSize={selectedSize}
               handleSizeClick={handleSizeClick}
               selectedStyle={selectedStyle}
               handleStyleClick={handleStyleClick}
+              selectedGender={selectedGender}
+              handleGenderClick={handleGenderClick}
             />
           </div>
         </div>

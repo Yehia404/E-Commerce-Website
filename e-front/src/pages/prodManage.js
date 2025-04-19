@@ -14,6 +14,7 @@ const ProdManage = () => {
     sizes: [],
     details: "",
     style: "",
+    gender: "",
   });
   const [errors, setErrors] = useState({});
   const [backendError, setBackendError] = useState("");
@@ -22,6 +23,7 @@ const ProdManage = () => {
 
   const allowedSizes = ["XS", "S", "M", "L", "XL"];
   const allowedStyles = ["Casual", "Formal", "Party", "Sport"];
+  const allowedGenders = ["Men", "Women", "Unisex"];
 
   useEffect(() => {
     fetchProducts();
@@ -68,6 +70,7 @@ const ProdManage = () => {
       sizes: [],
       details: "",
       style: "",
+      gender: "",
     });
     setErrors({});
     setBackendError("");
@@ -98,6 +101,7 @@ const ProdManage = () => {
     if (!product.details.trim()) err.details = "Details are required.";
     if (!product.image.trim()) err.image = "Image URL is required.";
     if (!product.style.trim()) err.style = "Style is required.";
+    if (!product.gender.trim()) err.gender = "Gender is required.";
     return err;
   };
 
@@ -192,6 +196,10 @@ const ProdManage = () => {
     {
       title: "Style",
       dataIndex: "style",
+    },
+    {
+      title: "Gender",
+      dataIndex: "gender",
     },
     {
       title: "Details",
@@ -366,6 +374,26 @@ const ProdManage = () => {
             </select>
             {errors.style && (
               <p className="text-red-500 text-xs">{errors.style}</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block font-medium">Gender</label>
+            <select
+              name="gender"
+              value={product.gender}
+              onChange={handleChange}
+              className="w-full mt-1 p-1 border rounded-sm"
+            >
+              <option value="">Select a gender</option>
+              {allowedGenders.map((gender) => (
+                <option key={gender} value={gender}>
+                  {gender}
+                </option>
+              ))}
+            </select>
+            {errors.gender && (
+              <p className="text-red-500 text-xs">{errors.gender}</p>
             )}
           </div>
 

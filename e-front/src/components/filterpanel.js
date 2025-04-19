@@ -1,40 +1,20 @@
 import React from "react";
-import { Slider } from "antd";
-import "../styles/slider.css";
 
 const FilterPanel = ({
-  priceRange,
-  setPriceRange,
   selectedSize,
   handleSizeClick,
   selectedStyle,
   handleStyleClick,
+  selectedGender,
+  handleGenderClick,
 }) => {
   const sizes = ["XS", "S", "M", "L", "XL", "2XL"];
   const dressStyles = ["Casual", "Formal", "Party", "Sport"];
+  const genders = ["Men", "Women", "Unisex"];
 
   return (
     <div className="w-64 bg-white p-6 rounded-lg shadow-md">
       <h3 className="font-semibold mb-4">Filters</h3>
-
-      {/* Price Filter */}
-      <div className="mb-6">
-        <h4 className="font-medium mb-2">Price</h4>
-        <Slider
-          range
-          min={50}
-          max={250}
-          step={5}
-          value={priceRange}
-          onChange={(value) => setPriceRange(value)}
-          tipFormatter={(value) => `$${value}`}
-          className="price-slider"
-        />
-        <div className="flex justify-between mt-2">
-          <span>${priceRange[0]}</span>
-          <span>${priceRange[1]}</span>
-        </div>
-      </div>
 
       {/* Size Filter */}
       <div className="mb-6">
@@ -71,6 +51,26 @@ const FilterPanel = ({
               onClick={() => handleStyleClick(style)}
             >
               {style}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Gender Filter */}
+      <div className="mb-6">
+        <h4 className="font-medium mb-2">Gender</h4>
+        <div className="grid grid-cols-3 gap-2">
+          {genders.map((gender) => (
+            <button
+              key={gender}
+              className={`px-2 py-1 border rounded-md text-sm ${
+                selectedGender === gender
+                  ? "bg-black text-white"
+                  : "hover:bg-gray-100"
+              }`}
+              onClick={() => handleGenderClick(gender)}
+            >
+              {gender}
             </button>
           ))}
         </div>
