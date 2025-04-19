@@ -8,40 +8,10 @@ import { toast, ToastContainer } from "react-toastify";
 import axios from "axios";
 import "react-toastify/dist/ReactToastify.css";
 
-const testimonials = [
-  {
-    name: "Sarah M.",
-    message:
-      "I'm blown away by the quality and style of the clothes I received! Definitely exceeded my expectations.",
-  },
-  {
-    name: "Alex K.",
-    message:
-      "Great customer service and fast delivery. The clothes fit perfectly and look amazing.",
-  },
-  {
-    name: "James L.",
-    message:
-      "Affordable prices for top-notch quality. I will definitely be shopping here again!",
-  },
-  {
-    name: "Emma W.",
-    message: "Stylish and comfy – my new go-to clothing brand!",
-  },
-  {
-    name: "Liam G.",
-    message:
-      "Fast shipping and excellent customer support. Highly recommended!",
-  },
-  {
-    name: "Olivia B.",
-    message: "Loved the entire experience, from browsing to delivery!",
-  },
-];
-
 const Home = () => {
   const [newArrivals, setNewArrivals] = useState([]);
   const [collection, setCollection] = useState([]);
+  const [topReviews, setTopReviews] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const navigate = useNavigate();
 
@@ -73,17 +43,33 @@ const Home = () => {
   }, []);
 
   useEffect(() => {
+    const aggregateReviews = () => {
+      const allReviews = collection
+        .flatMap((product) => product.reviews || []) // Ensure reviews is an array
+        .sort((a, b) => b.rating - a.rating);
+
+      setTopReviews(allReviews.slice(0, 6)); // Get top 6 reviews
+    };
+
+    aggregateReviews();
+  }, [collection]);
+
+  useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentIndex((prevIndex) => (prevIndex + 1) % testimonials.length);
+      if (topReviews.length > 0) {
+        setCurrentIndex((prevIndex) => (prevIndex + 1) % topReviews.length);
+      }
     }, 3000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [topReviews]);
 
   const getVisibleTestimonials = () => {
     const visible = [];
     for (let i = 0; i < 3; i++) {
-      visible.push(testimonials[(currentIndex + i) % testimonials.length]);
+      if (topReviews.length > 0) {
+        visible.push(topReviews[(currentIndex + i) % topReviews.length]);
+      }
     }
     return visible;
   };
@@ -93,7 +79,7 @@ const Home = () => {
   };
 
   const calculateAverageRating = (reviews) => {
-    if (reviews.length === 0) return 0;
+    if (!reviews || reviews.length === 0) return 0;
     const totalRating = reviews.reduce((acc, review) => acc + review.rating, 0);
     return totalRating / reviews.length;
   };
@@ -264,50 +250,35 @@ const Home = () => {
         </button>
       </section>
 
-      <section className="bg-gray-100 px-6 py-10">
-        <h2 className="text-2xl font-bold mb-6 text-center">
-          BROWSE BY DRESS STYLE
-        </h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {["Casual", "Formal", "Party", "Sport"].map((style, i) => (
-            <div
-              key={i}
-              className="relative group h-40 bg-cover bg-center rounded-md shadow-md"
-              style={{
-                backgroundImage: `url(${require(`../assets/casual.jpg`)})`,
-              }}
-              onClick={() => navigate(`/shop?style=${style.toLowerCase()}`)}
-            >
-              <div className="absolute inset-0 bg-black opacity-50 group-hover:opacity-30 transition-all duration-300"></div>
-              <div className="absolute inset-0 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all duration-300">
-                <button className="bg-black text-white px-6 py-2 rounded-full shadow-md">
-                  Shop Now
-                </button>
-              </div>
-              <p className="absolute bottom-4 left-4 text-2xl font-semibold text-white">
-                {style}
-              </p>
-            </div>
-          ))}
-        </div>
-      </section>
-
       <section className="px-6 py-10">
         <h2 className="text-2xl font-bold mb-6 text-center">
           OUR HAPPY CUSTOMERS
         </h2>
         <div className="grid md:grid-cols-3 gap-6 transition-all duration-500 ease-in-out">
-          {getVisibleTestimonials().map((t, i) => (
-            <div key={i} className="border rounded-md p-4 bg-white shadow-md">
-              <div className="flex text-yellow-500 mb-2">
-                {[...Array(5)].map((_, i) => (
-                  <FaStar key={i} />
-                ))}
-              </div>
-              <p className="text-sm text-gray-600 mb-2">{t.name}</p>
-              <p className="text-gray-700 text-sm">"{t.message}"</p>
-            </div>
-          ))}
+          {getVisibleTestimonials().map(
+            (review, i) =>
+              review && (
+                <div
+                  key={i}
+                  className="border rounded-md p-4 bg-white shadow-md"
+                >
+                  <div className="flex text-yellow-500 mb-2">
+                    {[...Array(5)].map((_, i) => (
+                      <FaStar
+                        key={i}
+                        className={
+                          i < review.rating
+                            ? "text-yellow-500"
+                            : "text-gray-300"
+                        }
+                      />
+                    ))}
+                  </div>
+                  <p className="text-sm text-gray-600 mb-2">{review.user}</p>
+                  <p className="text-gray-700 text-sm">"{review.comment}"</p>
+                </div>
+              )
+          )}
         </div>
       </section>
 
