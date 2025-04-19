@@ -78,6 +78,7 @@ const loginUser = async (req, res) => {
         email: user.email,
         phone: user.phone,
         isAdmin: user.isAdmin,
+        image: user.image,
       },
     });
   } catch (error) {
@@ -242,11 +243,51 @@ const getUserOrders = async (req, res) => {
   }
 };
 
+// Update User Profile
+const updateUserProfile = async (req, res) => {
+  const userId = req.user.userId; // Extract userId from token
+  const { firstname, lastname, phone, image } = req.body;
+
+  try {
+    // Find the user by ID
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Update user details
+    user.firstname = firstname || user.firstname;
+    user.lastname = lastname || user.lastname;
+    user.phone = phone || user.phone;
+    user.image = image || user.image;
+
+    // Save the updated user
+    await user.save();
+
+    res.status(200).json({
+      message: "Profile updated successfully",
+      user: {
+        id: user._id,
+        firstname: user.firstname,
+        lastname: user.lastname,
+        email: user.email,
+        phone: user.phone,
+        isAdmin: user.isAdmin,
+        image: user.image,
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 module.exports = {
   registerUser,
   loginUser,
   createOrder,
   getAllOrders,
   editStatus,
-  getUserOrders, // Export the new function
+  getUserOrders,
+  updateUserProfile,
 };

@@ -112,6 +112,7 @@ export const UserProvider = ({ children }) => {
     <UserContext.Provider
       value={{
         user,
+        setUser,
         token,
         isLoggedIn,
         isAdmin,

@@ -5,7 +5,8 @@ const {
   createOrder,
   getAllOrders,
   editStatus,
-  getUserOrders, // Import the new function
+  getUserOrders,
+  updateUserProfile,
 } = require("../controllers/userController");
 const authMiddleware = require("../middleware/authMiddleware");
 const router = express.Router();
@@ -27,5 +28,8 @@ router.get("/user/orders", authMiddleware, getUserOrders);
 
 // Edit order status
 router.put("/orders/:id/status", authMiddleware, editStatus);
+
+// Update user profile
+router.put("/profile", authMiddleware, updateUserProfile);
 
 module.exports = router;
