@@ -223,6 +223,24 @@ const editStatus = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+// Get Orders for a Specific User
+const getUserOrders = async (req, res) => {
+  const userId = req.user.userId; // Extract userId from token
+
+  try {
+    // Find the user by ID
+    const user = await User.findById(userId).populate("orders");
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Return the user's orders
+    res.status(200).json(user.orders);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
 
 module.exports = {
   registerUser,
@@ -230,4 +248,5 @@ module.exports = {
   createOrder,
   getAllOrders,
   editStatus,
+  getUserOrders, // Export the new function
 };

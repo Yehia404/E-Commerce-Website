@@ -16,6 +16,7 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
+import Order from "./pages/order";
 
 function App() {
   return (
@@ -33,6 +34,7 @@ function App() {
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/admin/*" element={<Admin />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/order" element={<Order />} />
           </Routes>
         </CartProvider>
       </UserProvider>

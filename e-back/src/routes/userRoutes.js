@@ -5,6 +5,7 @@ const {
   createOrder,
   getAllOrders,
   editStatus,
+  getUserOrders, // Import the new function
 } = require("../controllers/userController");
 const authMiddleware = require("../middleware/authMiddleware");
 const router = express.Router();
@@ -20,6 +21,9 @@ router.post("/orders", authMiddleware, createOrder);
 
 // Get all orders
 router.get("/orders", authMiddleware, getAllOrders);
+
+// Get orders for a specific user
+router.get("/user/orders", authMiddleware, getUserOrders);
 
 // Edit order status
 router.put("/orders/:id/status", authMiddleware, editStatus);

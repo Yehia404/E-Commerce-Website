@@ -15,6 +15,7 @@ const Product = () => {
   const [selectedImage, setSelectedImage] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [selectedSize, setSelectedSize] = useState(null);
+  const [availableStock, setAvailableStock] = useState(0);
   const [activeTab, setActiveTab] = useState("details");
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [reviewInput, setReviewInput] = useState({
@@ -59,10 +60,18 @@ const Product = () => {
   }
 
   const increaseQty = () => {
-    if (quantity < 5) setQuantity(quantity + 1);
+    const maxQuantity = Math.min(availableStock, 5);
+    if (quantity < maxQuantity) setQuantity(quantity + 1);
   };
 
   const decreaseQty = () => setQuantity(quantity > 1 ? quantity - 1 : 1);
+
+  const handleSizeSelect = (size) => {
+    setSelectedSize(size);
+    const sizeEntry = productData.sizes.find((entry) => entry.size === size);
+    setAvailableStock(sizeEntry ? sizeEntry.stock : 0);
+    setQuantity(1); // Reset quantity to 1 when a new size is selected
+  };
 
   const handleAddToCart = () => {
     if (!isLoggedIn) {
@@ -227,7 +236,7 @@ const Product = () => {
               <button
                 key={size}
                 disabled={stock === 0}
-                onClick={() => setSelectedSize(size)}
+                onClick={() => handleSizeSelect(size)}
                 className={`px-4 py-2 border rounded-md ${
                   selectedSize === size
                     ? "bg-black text-white"
@@ -265,7 +274,7 @@ const Product = () => {
             <button
               onClick={increaseQty}
               className="px-3 py-1 border rounded-md text-lg"
-              disabled={quantity === 5}
+              disabled={quantity >= Math.min(availableStock, 5)}
             >
               +
             </button>
