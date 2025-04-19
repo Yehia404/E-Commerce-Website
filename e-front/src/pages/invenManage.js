@@ -1,38 +1,142 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Table, Modal, Form, Input, Button, Checkbox, Row, Col } from "antd";
-
-// Sample data for products
-const initialProducts = [
-  {
-    key: 1,
-    name: "Product A",
-    sizes: [
-      { size: "S", stock: 3 },
-      { size: "M", stock: 5 },
-      { size: "L", stock: 2 },
-    ],
-    available: true,
-  },
-  {
-    key: 2,
-    name: "Product B",
-    sizes: [
-      { size: "S", stock: 15 },
-      { size: "M", stock: 12 },
-      { size: "L", stock: 8 },
-      { size: "XL", stock: 8 },
-    ],
-    available: true,
-  },
-];
+import axios from "axios";
+import { useUser } from "../context/usercontext";
 
 const InvenManage = () => {
-  const [products, setProducts] = useState(initialProducts);
+  const [products, setProducts] = useState([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [errors, setErrors] = useState({ discount: "", stock: {} });
+  const { token } = useUser();
 
-  // Column configuration for the table
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const fetchProducts = async () => {
+    try {
+      const res = await axios.get(
+        "http://localhost:5000/api/products/inventory",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      setProducts(res.data);
+    } catch (err) {
+      console.error("Error fetching products", err);
+    }
+  };
+
+  const showModal = (product) => {
+    setSelectedProduct(product);
+    setErrors({ discount: "", stock: {} });
+    setIsModalVisible(true);
+  };
+
+  const handleOk = async () => {
+    try {
+      const { _id, sizes, available, discount } = selectedProduct;
+
+      if (discount < 0 || discount > 100) {
+        setErrors((prev) => ({
+          ...prev,
+          discount: "Discount must be between 0 and 100",
+        }));
+        return;
+      }
+
+      const res = await axios.put(
+        `http://localhost:5000/api/products/inventory/${_id}`,
+        {
+          sizes,
+          available,
+          discount,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const updatedProducts = products.map((product) =>
+        product._id === _id ? res.data : product
+      );
+
+      setProducts(updatedProducts);
+      setIsModalVisible(false);
+    } catch (error) {
+      console.error("Error updating product inventory:", error);
+    }
+  };
+
+  const handleCancel = () => {
+    setIsModalVisible(false);
+  };
+
+  const handleInputChange = (e, field) => {
+    let value = Number(e.target.value);
+    let error = "";
+
+    if (field === "discount") {
+      if (value < 0) {
+        value = 0;
+        error = "Minimum is 0";
+      }
+      if (value > 100) {
+        value = 100;
+        error = "Maximum is 100";
+      }
+      setErrors((prev) => ({ ...prev, discount: error }));
+    }
+
+    setSelectedProduct({
+      ...selectedProduct,
+      [field]: value,
+    });
+  };
+
+  const handleStockChange = (e, index) => {
+    let value = Number(e.target.value);
+    if (value < 0) value = 0;
+
+    const newSizes = [...selectedProduct.sizes];
+    newSizes[index].stock = value;
+
+    setSelectedProduct({
+      ...selectedProduct,
+      sizes: newSizes,
+    });
+
+    setErrors((prev) => ({
+      ...prev,
+      stock: {
+        ...prev.stock,
+        [index]: value < 0 ? "Stock can't be negative" : "",
+      },
+    }));
+  };
+
+  const handleAvailabilityChange = (e) => {
+    setSelectedProduct({
+      ...selectedProduct,
+      available: e.target.checked,
+    });
+  };
+
+  const totalStock = selectedProduct?.sizes.reduce(
+    (acc, size) => acc + size.stock,
+    0
+  );
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
   const columns = [
     {
       title: "Product Name",
@@ -77,6 +181,24 @@ const InvenManage = () => {
       render: (available) => (available ? "Yes" : "No"),
     },
     {
+      title: "Discount",
+      dataIndex: "discount",
+      key: "discount",
+      render: (discount) => `${discount}%`,
+    },
+    {
+      title: "Image",
+      dataIndex: "image",
+      key: "image",
+      render: (img) => (
+        <img
+          src={img}
+          alt="Product"
+          style={{ width: 60, height: 60, objectFit: "cover" }}
+        />
+      ),
+    },
+    {
       title: "Action",
       key: "action",
       render: (text, record) => (
@@ -91,75 +213,13 @@ const InvenManage = () => {
     },
   ];
 
-  // Show modal with product data
-  const showModal = (product) => {
-    setSelectedProduct(product);
-    setIsModalVisible(true);
-  };
-
-  // Handle form submission
-  const handleOk = () => {
-    const updatedProducts = [...products];
-    const index = updatedProducts.findIndex(
-      (p) => p.key === selectedProduct.key
-    );
-    updatedProducts[index] = selectedProduct;
-
-    setProducts(updatedProducts);
-    setIsModalVisible(false);
-  };
-
-  // Handle form cancel
-  const handleCancel = () => {
-    setIsModalVisible(false);
-  };
-
-  // Handle input change for product properties
-  const handleInputChange = (e, field) => {
-    const { value } = e.target;
-    setSelectedProduct({
-      ...selectedProduct,
-      [field]: value,
-    });
-  };
-
-  // Handle stock change
-  const handleStockChange = (e, index) => {
-    const newSizes = [...selectedProduct.sizes];
-    newSizes[index].stock = Number(e.target.value);
-    setSelectedProduct({
-      ...selectedProduct,
-      sizes: newSizes,
-    });
-  };
-
-  // Handle availability toggle
-  const handleAvailabilityChange = (e) => {
-    setSelectedProduct({
-      ...selectedProduct,
-      available: e.target.checked,
-    });
-  };
-
-  // Calculate the total stock
-  const totalStock = selectedProduct?.sizes.reduce(
-    (acc, size) => acc + size.stock,
-    0
-  );
-
-  // Handle pagination changes
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-  };
-
   return (
     <div>
       <h2 className="text-3xl font-semibold mb-4">Inventory Management</h2>
       <br />
-      {/* Ant Design Table */}
       <Table
         columns={columns}
-        dataSource={products}
+        dataSource={products.map((p, idx) => ({ ...p, key: p._id || idx }))}
         className="bg-white rounded shadow"
         pagination={{
           current: currentPage,
@@ -172,7 +232,6 @@ const InvenManage = () => {
         scroll={{ y: 400 }}
       />
 
-      {/* Modal for editing product details */}
       <Modal
         title={`Edit ${selectedProduct?.name}`}
         visible={isModalVisible}
@@ -188,34 +247,29 @@ const InvenManage = () => {
         ]}
       >
         <Form layout="vertical">
-          <Form.Item label="Product Name">
-            <Input
-              name="name"
-              value={selectedProduct?.name}
-              onChange={(e) => handleInputChange(e, "name")}
-            />
-          </Form.Item>
-
           <Form.Item label="Sizes and Stock">
             {selectedProduct?.sizes.map((size, index) => (
-              <Row
-                key={index}
-                gutter={16}
-                align="middle"
-                style={{ marginBottom: 8 }}
-              >
-                <Col span={6}>
-                  <span style={{ fontWeight: 500 }}>{size.size}</span>
-                </Col>
-                <Col span={18}>
-                  <Input
-                    type="number"
-                    value={size.stock}
-                    onChange={(e) => handleStockChange(e, index)}
-                    style={{ width: "100%" }}
-                  />
-                </Col>
-              </Row>
+              <div key={index} style={{ marginBottom: 12 }}>
+                <Row gutter={16} align="middle">
+                  <Col span={6}>
+                    <span style={{ fontWeight: 500 }}>{size.size}</span>
+                  </Col>
+                  <Col span={18}>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={size.stock}
+                      onChange={(e) => handleStockChange(e, index)}
+                      style={{ width: "100%" }}
+                    />
+                    {errors.stock[index] && (
+                      <div style={{ color: "red", fontSize: 12 }}>
+                        {errors.stock[index]}
+                      </div>
+                    )}
+                  </Col>
+                </Row>
+              </div>
             ))}
           </Form.Item>
 
@@ -228,7 +282,22 @@ const InvenManage = () => {
             </Checkbox>
           </Form.Item>
 
-          {/* Display stock alert */}
+          <Form.Item label="Discount">
+            <Input
+              type="number"
+              min={0}
+              max={100}
+              value={selectedProduct?.discount}
+              onChange={(e) => handleInputChange(e, "discount")}
+              style={{ width: "100%" }}
+            />
+            {errors.discount && (
+              <div style={{ color: "red", fontSize: 12 }}>
+                {errors.discount}
+              </div>
+            )}
+          </Form.Item>
+
           {totalStock < 10 && (
             <div style={{ color: "red", fontWeight: "bold" }}>Low Stock!</div>
           )}

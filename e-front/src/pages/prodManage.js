@@ -1,43 +1,79 @@
-import React, { useState } from "react";
-import { Modal, Table, Tag } from "antd";
-
-const dummyProducts = [
-  {
-    key: "1",
-    name: "Gradient Graphic T-shirt",
-    description: "A trendy t-shirt perfect for parties and casual wear.",
-    price: 145,
-    sizes: ["XS", "S", "M", "L", "XL"],
-    details: "Made of 100% cotton. Breathable, soft, and stylish.",
-  },
-  {
-    key: "2",
-    name: "Denim Jacket",
-    description: "Classic and rugged. Ideal for winter layering.",
-    price: 220,
-    sizes: ["S", "M", "L"],
-    details: "High-quality denim with fleece lining.",
-  },
-];
+import React, { useState, useEffect } from "react";
+import { Modal, Table, Tag, message } from "antd";
+import axios from "axios";
+import { useUser } from "../context/usercontext";
 
 const ProdManage = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [products, setProducts] = useState(dummyProducts);
+  const [products, setProducts] = useState([]);
   const [product, setProduct] = useState({
     name: "",
     description: "",
     price: "",
-    images: [],
+    image: "",
     sizes: [],
     details: "",
+    style: "",
+    gender: "",
   });
   const [errors, setErrors] = useState({});
-  const [sizeInput, setSizeInput] = useState("");
+  const [backendError, setBackendError] = useState("");
+  const [isEditMode, setIsEditMode] = useState(false);
+  const { token } = useUser();
 
-  const showModal = () => setIsModalVisible(true);
+  const allowedSizes = ["XS", "S", "M", "L", "XL"];
+  const allowedStyles = ["Casual", "Formal", "Party", "Sport"];
+  const allowedGenders = ["Men", "Women", "Unisex"];
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const fetchProducts = async () => {
+    try {
+      const res = await axios.get(
+        "http://localhost:5000/api/products/allproducts",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      setProducts(res.data);
+    } catch (err) {
+      console.error("Error fetching products", err);
+    }
+  };
+
+  const showModal = (product = null) => {
+    if (product) {
+      setProduct(product);
+      setIsEditMode(true);
+    } else {
+      resetForm();
+      setIsEditMode(false);
+    }
+    setIsModalVisible(true);
+  };
+
   const handleCancel = () => {
     setIsModalVisible(false);
+    resetForm();
+  };
+
+  const resetForm = () => {
+    setProduct({
+      name: "",
+      description: "",
+      price: "",
+      image: "",
+      sizes: [],
+      details: "",
+      style: "",
+      gender: "",
+    });
     setErrors({});
+    setBackendError("");
   };
 
   const handleChange = (e) => {
@@ -45,26 +81,13 @@ const ProdManage = () => {
     setProduct({ ...product, [name]: value });
   };
 
-  const handleImageChange = (e) => {
-    const files = Array.from(e.target.files);
-    setProduct({ ...product, images: files });
-  };
-
-  const handleAddSize = () => {
-    const allowedSizes = ["XS", "S", "M", "L", "XL"];
-    const size = sizeInput.trim().toUpperCase();
-
-    if (size && allowedSizes.includes(size)) {
-      const alreadyAdded = product.sizes.some((s) => s.size === size);
-      if (!alreadyAdded) {
-        setProduct({
-          ...product,
-          sizes: [...product.sizes, { size }],
-        });
-      }
-    }
-
-    setSizeInput("");
+  const handleSizeToggle = (size) => {
+    setProduct((prevProduct) => {
+      const sizes = prevProduct.sizes.some((s) => s.size === size)
+        ? prevProduct.sizes.filter((s) => s.size !== size)
+        : [...prevProduct.sizes, { size, stock: 0 }];
+      return { ...prevProduct, sizes };
+    });
   };
 
   const validate = () => {
@@ -76,10 +99,13 @@ const ProdManage = () => {
       err.price = "Valid price is required.";
     if (!product.sizes.length) err.sizes = "At least one size is required.";
     if (!product.details.trim()) err.details = "Details are required.";
+    if (!product.image.trim()) err.image = "Image URL is required.";
+    if (!product.style.trim()) err.style = "Style is required.";
+    if (!product.gender.trim()) err.gender = "Gender is required.";
     return err;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     const validationErrors = validate();
@@ -88,52 +114,60 @@ const ProdManage = () => {
       return;
     }
 
-    const updatedProduct = {
+    const finalProduct = {
       ...product,
-      key: editingProduct ? editingProduct.key : Date.now(),
-      sizes: product.sizes.map((s) => s.size),
+      price: Number(product.price),
     };
 
-    if (isEditMode) {
-      const updatedList = products.map((p) =>
-        p.key === editingProduct.key ? updatedProduct : p
-      );
-      setProducts(updatedList);
-    } else {
-      setProducts([...products, updatedProduct]);
+    try {
+      if (isEditMode) {
+        await axios.put(
+          `http://localhost:5000/api/products/${product.name}`,
+          finalProduct,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        message.success("Product updated successfully");
+      } else {
+        await axios.post(
+          "http://localhost:5000/api/products/addproduct",
+          finalProduct,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        message.success("Product added successfully");
+      }
+      fetchProducts();
+      resetForm();
+      setIsModalVisible(false);
+    } catch (err) {
+      console.error("Error saving product:", err.response?.data || err.message);
+      setBackendError(err.response?.data?.error || "An error occurred");
     }
-
-    setProduct({
-      name: "",
-      description: "",
-      price: "",
-      images: [],
-      sizes: [],
-      details: "",
-    });
-    setErrors({});
-    setSizeInput("");
-    setEditingProduct(null);
-    setIsEditMode(false);
-    setIsModalVisible(false);
   };
 
-  const [editingProduct, setEditingProduct] = useState(null);
-  const [isEditMode, setIsEditMode] = useState(false);
-  const handleEdit = (productToEdit) => {
-    setProduct({
-      ...productToEdit,
-      sizes: productToEdit.sizes.map((s) => ({ size: s })),
-      images: [],
-    });
-    setEditingProduct(productToEdit);
-    setIsEditMode(true);
-    setIsModalVisible(true);
-  };
-
-  const handleRemove = (key) => {
-    const filtered = products.filter((item) => item.key !== key);
-    setProducts(filtered);
+  const handleRemove = async (name) => {
+    try {
+      await axios.delete(`http://localhost:5000/api/products/${name}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      message.success("Product removed successfully");
+      fetchProducts();
+    } catch (err) {
+      console.error(
+        "Error removing product:",
+        err.response?.data || err.message
+      );
+      message.error("Failed to remove product");
+    }
   };
 
   const columns = [
@@ -155,27 +189,46 @@ const ProdManage = () => {
       render: (sizes) =>
         sizes.map((size, idx) => (
           <Tag key={idx} color="blue">
-            {size}
+            {size.size}
           </Tag>
         )),
+    },
+    {
+      title: "Style",
+      dataIndex: "style",
+    },
+    {
+      title: "Gender",
+      dataIndex: "gender",
     },
     {
       title: "Details",
       dataIndex: "details",
     },
     {
+      title: "Image",
+      dataIndex: "image",
+      render: (img) => (
+        <img
+          src={img}
+          alt="Product"
+          style={{ width: 60, height: 60, objectFit: "cover" }}
+        />
+      ),
+    },
+    {
       title: "Actions",
-      render: (_, record) => (
-        <div className="flex gap-2">
+      render: (text, record) => (
+        <div className="flex space-x-2">
           <button
-            onClick={() => handleEdit(record)}
-            className="px-3 py-1 bg-black text-white rounded hover:bg-gray-800"
+            onClick={() => showModal(record)}
+            className="bg-black text-white px-3 py-1 rounded hover:bg-gray-800"
           >
             Edit
           </button>
           <button
-            onClick={() => handleRemove(record.key)}
-            className="px-3 py-1 bg-black text-white rounded hover:bg-gray-800"
+            onClick={() => handleRemove(record.name)}
+            className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-700"
           >
             Remove
           </button>
@@ -192,12 +245,12 @@ const ProdManage = () => {
         <h2 className="text-xl font-semibold mb-4">Product Catalog</h2>
         <Table
           columns={columns}
-          dataSource={products}
+          dataSource={products.map((p, idx) => ({ ...p, key: p._id || idx }))}
           pagination={{ pageSize: 4 }}
         />
         <div className="flex justify-end mt-4">
           <button
-            onClick={showModal}
+            onClick={() => showModal()}
             className="px-5 py-2 bg-black text-white rounded hover:bg-gray-800"
           >
             Add Product
@@ -211,6 +264,11 @@ const ProdManage = () => {
         onCancel={handleCancel}
         footer={null}
       >
+        {backendError && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
+            <span className="block sm:inline">{backendError}</span>
+          </div>
+        )}
         <form onSubmit={handleSubmit} className="space-y-2 text-sm">
           <div>
             <label className="block font-medium">Name</label>
@@ -220,6 +278,7 @@ const ProdManage = () => {
               value={product.name}
               onChange={handleChange}
               className="w-full mt-1 p-1 border rounded-sm"
+              disabled={isEditMode} // Disable name editing in edit mode
             />
             {errors.name && (
               <p className="text-red-500 text-xs">{errors.name}</p>
@@ -254,46 +313,87 @@ const ProdManage = () => {
           </div>
 
           <div>
-            <label className="block font-medium">Images</label>
+            <label className="block font-medium">Image URL</label>
             <input
-              type="file"
-              multiple
-              accept="image/*"
-              onChange={handleImageChange}
-              className="mt-1"
+              type="text"
+              name="image"
+              value={product.image}
+              onChange={handleChange}
+              placeholder="https://example.com/image.jpg"
+              className="w-full mt-1 p-1 border rounded-sm"
             />
+            {errors.image && (
+              <p className="text-red-500 text-xs">{errors.image}</p>
+            )}
+            {product.image && (
+              <img
+                src={product.image}
+                alt="Preview"
+                className="mt-2 w-24 h-24 object-cover rounded"
+              />
+            )}
           </div>
 
           <div>
             <label className="block font-medium">Sizes</label>
             <div className="flex items-center gap-2 mt-1">
-              <input
-                type="text"
-                value={sizeInput}
-                onChange={(e) => setSizeInput(e.target.value)}
-                placeholder="Enter size (e.g., M)"
-                className="flex-1 p-1 border rounded-sm"
-              />
-              <button
-                type="button"
-                onClick={handleAddSize}
-                className="px-3 py-1 bg-black text-white rounded-sm hover:bg-gray-800"
-              >
-                Add
-              </button>
-            </div>
-            <div className="mt-1 flex flex-wrap gap-1">
-              {product.sizes.map((s, idx) => (
-                <span
-                  key={idx}
-                  className="bg-gray-200 px-2 py-0.5 rounded-full text-xs"
+              {allowedSizes.map((size) => (
+                <button
+                  key={size}
+                  type="button"
+                  onClick={() => handleSizeToggle(size)}
+                  className={`px-3 py-1 rounded-sm ${
+                    product.sizes.some((s) => s.size === size)
+                      ? "bg-blue-500 text-white"
+                      : "bg-gray-200"
+                  }`}
                 >
-                  {s.size}
-                </span>
+                  {size}
+                </button>
               ))}
             </div>
             {errors.sizes && (
               <p className="text-red-500 text-xs">{errors.sizes}</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block font-medium">Style</label>
+            <select
+              name="style"
+              value={product.style}
+              onChange={handleChange}
+              className="w-full mt-1 p-1 border rounded-sm"
+            >
+              <option value="">Select a style</option>
+              {allowedStyles.map((style) => (
+                <option key={style} value={style}>
+                  {style}
+                </option>
+              ))}
+            </select>
+            {errors.style && (
+              <p className="text-red-500 text-xs">{errors.style}</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block font-medium">Gender</label>
+            <select
+              name="gender"
+              value={product.gender}
+              onChange={handleChange}
+              className="w-full mt-1 p-1 border rounded-sm"
+            >
+              <option value="">Select a gender</option>
+              {allowedGenders.map((gender) => (
+                <option key={gender} value={gender}>
+                  {gender}
+                </option>
+              ))}
+            </select>
+            {errors.gender && (
+              <p className="text-red-500 text-xs">{errors.gender}</p>
             )}
           </div>
 

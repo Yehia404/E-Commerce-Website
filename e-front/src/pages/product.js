@@ -1,36 +1,22 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "../components/navbar";
 import Footer from "../components/footer";
-import img1 from "../assets/casual.jpg";
-import img2 from "../assets/hero.jpg";
-import img3 from "../assets/casual.jpg";
-
-const productData = {
-  name: "Gradient Graphic T-shirt",
-  description: "A trendy t-shirt perfect for parties and casual wear.",
-  price: 145,
-  discount: 20,
-  images: [img1, img2, img3],
-  sizes: [
-    { size: "XS", stock: 2 },
-    { size: "S", stock: 3 },
-    { size: "M", stock: 1 },
-    { size: "L", stock: 0 },
-    { size: "XL", stock: 0 },
-  ],
-  details: "Made of 100% cotton. Breathable, soft, and stylish.",
-  reviews: [
-    { user: "John", comment: "Great quality!", rating: 5 },
-    { user: "Jane", comment: "Loved the color!", rating: 3 },
-  ],
-};
+import axios from "axios";
+import { useCart } from "../context/cartcontext";
+import { useUser } from "../context/usercontext";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const Product = () => {
-  const [selectedImage, setSelectedImage] = useState(productData.images[0]);
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [productData, setProductData] = useState(null);
+  const [selectedImage, setSelectedImage] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [selectedSize, setSelectedSize] = useState(null);
+  const [availableStock, setAvailableStock] = useState(0);
   const [activeTab, setActiveTab] = useState("details");
-
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [reviewInput, setReviewInput] = useState({
     user: "",
@@ -42,25 +28,91 @@ const Product = () => {
     comment: "",
   });
 
+  const { addToCart } = useCart();
+  const { isLoggedIn, token } = useUser();
+
+  useEffect(() => {
+    const fetchProduct = async () => {
+      try {
+        const response = await axios.get(
+          `http://localhost:5000/api/products/${id}`
+        );
+        const product = response.data;
+
+        const repeatedImages = Array(3).fill(product.image);
+
+        setProductData({
+          ...product,
+          images: repeatedImages,
+        });
+
+        setSelectedImage(repeatedImages[0]);
+      } catch (err) {
+        console.error("Error fetching product:", err);
+      }
+    };
+
+    fetchProduct();
+  }, [id]);
+
+  if (!productData) {
+    return <div>Loading...</div>;
+  }
+
   const increaseQty = () => {
-    if (quantity < 3) setQuantity(quantity + 1);
+    const maxQuantity = Math.min(availableStock, 5);
+    if (quantity < maxQuantity) setQuantity(quantity + 1);
   };
 
   const decreaseQty = () => setQuantity(quantity > 1 ? quantity - 1 : 1);
 
+  const handleSizeSelect = (size) => {
+    setSelectedSize(size);
+    const sizeEntry = productData.sizes.find((entry) => entry.size === size);
+    setAvailableStock(sizeEntry ? sizeEntry.stock : 0);
+    setQuantity(1); // Reset quantity to 1 when a new size is selected
+  };
+
   const handleAddToCart = () => {
-    if (!selectedSize) {
-      alert("Please select a size.");
+    if (!isLoggedIn) {
+      navigate("/login");
       return;
     }
 
-    console.log("Added to cart:", {
-      product: productData.name,
-      size: selectedSize,
-      quantity,
-    });
+    if (!selectedSize) {
+      return;
+    }
 
-    alert(`Added ${quantity} item(s) of size ${selectedSize} to cart!`);
+    const productToAdd = {
+      id: productData._id,
+      name: productData.name,
+      price: productData.price,
+      size: selectedSize,
+      image: productData.image,
+      quantity,
+      discount: productData.discount,
+    };
+
+    addToCart(productToAdd);
+
+    // Show toast notification
+    toast.success("Added to cart!", {
+      position: "top-right",
+      autoClose: 3000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      progress: undefined,
+    });
+  };
+
+  const handleWriteReview = () => {
+    if (!isLoggedIn) {
+      navigate("/login");
+    } else {
+      setShowReviewForm(true);
+    }
   };
 
   const discountedPrice = productData.discount
@@ -68,21 +120,23 @@ const Product = () => {
     : productData.price;
 
   const avgRating =
-    productData.reviews.reduce((acc, r) => acc + r.rating, 0) /
-    productData.reviews.length;
+    productData.reviews.length > 0
+      ? productData.reviews.reduce((acc, r) => acc + r.rating, 0) /
+        productData.reviews.length
+      : 0;
 
   const totalStock = productData.sizes.reduce(
     (acc, size) => acc + size.stock,
     0
   );
   const lowStockThreshold = 10;
-  const isLowStock = totalStock < lowStockThreshold;
+  const isLowStock = totalStock < lowStockThreshold && totalStock > 0;
+  const isSoldOut = totalStock === 0;
 
-  const handleReviewSubmit = (e) => {
+  const handleReviewSubmit = async (e) => {
     e.preventDefault();
     let errors = { user: "", comment: "" };
 
-    // Validate inputs
     if (!reviewInput.user) {
       errors.user = "Name is required.";
     }
@@ -90,36 +144,43 @@ const Product = () => {
       errors.comment = "Review comment is required.";
     }
 
-    // If there are errors, don't submit the form
     if (errors.user || errors.comment) {
       setReviewErrors(errors);
       return;
     }
 
-    // Submit the review
-    productData.reviews.push(reviewInput);
-    const newAvgRating =
-      productData.reviews.reduce((acc, r) => acc + r.rating, 0) /
-      productData.reviews.length;
-    setShowReviewForm(false); // Close the modal
-    setReviewInput({
-      user: "",
-      comment: "",
-      rating: 5,
-    });
-    setReviewErrors({
-      user: "",
-      comment: "",
-    }); // Reset error messages
-    alert("Review submitted!");
-    console.log("New Avg Rating:", newAvgRating.toFixed(2));
+    try {
+      const response = await axios.post(
+        `http://localhost:5000/api/products/${id}/reviews`,
+        reviewInput,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setProductData(response.data);
+      setShowReviewForm(false);
+      setReviewInput({
+        user: "",
+        comment: "",
+        rating: 5,
+      });
+      setReviewErrors({
+        user: "",
+        comment: "",
+      });
+    } catch (err) {
+      console.error("Error submitting review:", err);
+    }
   };
 
   return (
     <div>
       <Navbar />
+      <ToastContainer />
       <div className="max-w-7xl mx-auto px-4 py-8 flex flex-col md:flex-row gap-10">
-        {/* Image Section */}
         <div className="flex gap-4">
           <div className="flex flex-col gap-4">
             {productData.images.map((img, i) => (
@@ -141,7 +202,6 @@ const Product = () => {
           />
         </div>
 
-        {/* Product Info */}
         <div className="flex-1 space-y-6">
           <h2 className="text-2xl font-bold">{productData.name}</h2>
           <p className="text-gray-600">{productData.description}</p>
@@ -176,7 +236,7 @@ const Product = () => {
               <button
                 key={size}
                 disabled={stock === 0}
-                onClick={() => setSelectedSize(size)}
+                onClick={() => handleSizeSelect(size)}
                 className={`px-4 py-2 border rounded-md ${
                   selectedSize === size
                     ? "bg-black text-white"
@@ -190,7 +250,12 @@ const Product = () => {
                 {size}
               </button>
             ))}
-            {isLowStock && (
+            {isSoldOut && (
+              <div className="ml-4 p-2 text-red-500 bg-red-100 rounded-full text-xs font-semibold">
+                Sold Out
+              </div>
+            )}
+            {isLowStock && !isSoldOut && (
               <div className="ml-4 p-2 text-red-500 bg-red-100 rounded-full text-xs font-semibold">
                 Low Stock
               </div>
@@ -209,18 +274,21 @@ const Product = () => {
             <button
               onClick={increaseQty}
               className="px-3 py-1 border rounded-md text-lg"
-              disabled={quantity === 3}
+              disabled={quantity >= Math.min(availableStock, 5)}
             >
               +
             </button>
           </div>
 
-          <button
-            onClick={handleAddToCart}
-            className="px-6 py-3 bg-black text-white rounded-md"
-          >
-            Add to Cart
-          </button>
+          <div className="relative">
+            <button
+              onClick={handleAddToCart}
+              disabled={!selectedSize || isSoldOut}
+              className="px-6 py-3 bg-black text-white rounded-md disabled:opacity-50"
+            >
+              Add to Cart
+            </button>
+          </div>
 
           <div className="mt-8">
             <div className="flex border-b mb-4">
@@ -245,7 +313,6 @@ const Product = () => {
               )}
               {activeTab === "reviews" && (
                 <div className="space-y-4">
-                  {/* Display Reviews */}
                   {productData.reviews.map((review, i) => (
                     <div key={i} className="border-b pb-2">
                       <p className="font-semibold">{review.user}</p>
@@ -258,21 +325,18 @@ const Product = () => {
                     </div>
                   ))}
 
-                  {/* Write Review Button */}
                   <div className="flex justify-end">
                     <button
-                      onClick={() => setShowReviewForm(true)}
+                      onClick={handleWriteReview}
                       className="mt-4 text-sm text-white bg-black px-4 py-2 rounded-md hover:bg-gray-800"
                     >
                       Write a Review
                     </button>
                   </div>
 
-                  {/* Modal for Review Form */}
                   {showReviewForm && (
                     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                       <div className="bg-white rounded-lg p-6 w-full max-w-md relative shadow-lg">
-                        {/* Close Button */}
                         <button
                           onClick={() => setShowReviewForm(false)}
                           className="absolute top-2 right-2 text-gray-600 hover:text-black text-xl"
@@ -300,7 +364,6 @@ const Product = () => {
                             }
                             className="w-full border rounded-md p-2"
                           />
-                          {/* Error message for user */}
                           {reviewErrors.user && (
                             <p className="text-red-500 text-sm">
                               {reviewErrors.user}
@@ -318,7 +381,6 @@ const Product = () => {
                             }
                             className="w-full border rounded-md p-2"
                           />
-                          {/* Error message for comment */}
                           {reviewErrors.comment && (
                             <p className="text-red-500 text-sm">
                               {reviewErrors.comment}

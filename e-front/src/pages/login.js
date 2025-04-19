@@ -1,25 +1,47 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Navbar from "../components/navbar";
 import Footer from "../components/footer";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import Password from "../components/password";
 import { useUser } from "../context/usercontext";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const Login = () => {
   const { loginUser } = useUser();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
 
+  const [rememberMe, setRememberMe] = useState(false);
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState("");
+
+  useEffect(() => {
+    if (location.state?.showToast) {
+      toast.success("User registered successfully!", {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+      });
+    }
+  }, [location.state]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     setServerError(""); // clear error on change
+  };
+
+  const handleCheckboxChange = () => {
+    setRememberMe(!rememberMe);
   };
 
   const validateForm = () => {
@@ -43,7 +65,7 @@ const Login = () => {
 
     if (!validateForm()) return;
 
-    const res = await loginUser(formData);
+    const res = await loginUser(formData, rememberMe);
     if (res.success) {
       navigate("/home");
     } else {
@@ -88,7 +110,12 @@ const Login = () => {
             {/* Remember Me & Forgot Password */}
             <div className="flex items-center justify-between mb-6 text-sm text-gray-600">
               <label className="flex items-center">
-                <input type="checkbox" className="mr-2" />
+                <input
+                  type="checkbox"
+                  className="mr-2"
+                  checked={rememberMe}
+                  onChange={handleCheckboxChange}
+                />
                 Remember Me
               </label>
               <a href="#" className="hover:underline">
@@ -135,6 +162,7 @@ const Login = () => {
         </div>
       </div>
       <Footer />
+      <ToastContainer />
     </div>
   );
 };

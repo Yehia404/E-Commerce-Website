@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from "react";
 import Navbar from "../components/navbar";
 import Footer from "../components/footer";
-import { Input } from "antd";
+import { Input, message } from "antd";
 import { EditOutlined } from "@ant-design/icons";
 import { useUser } from "../context/usercontext";
+import axios from "axios";
 
 const Profile = () => {
-  const { user } = useUser();
+  const { user, token, setUser } = useUser();
 
   const [profile, setProfile] = useState({
     firstname: "",
@@ -32,6 +33,7 @@ const Profile = () => {
         lastname: user.lastname || "",
         number: user.phone || "",
         email: user.email || "",
+        image: user.image || null,
       }));
     }
   }, [user]);
@@ -56,10 +58,33 @@ const Profile = () => {
     }
   };
 
-  const handleSave = () => {
-    console.log("Saving profile...", profile);
-    setHasChanges(false);
-    setEditing({ firstname: false, lastname: false, number: false });
+  const handleSave = async () => {
+    try {
+      console.log("Saving profile:", profile);
+      const response = await axios.put(
+        "http://localhost:5000/api/users/profile",
+        {
+          firstname: profile.firstname,
+          lastname: profile.lastname,
+          phone: profile.number,
+          image: profile.image,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      message.success("Profile updated successfully");
+      setUser(response.data.user);
+      localStorage.setItem("user", JSON.stringify(response.data.user));
+      setHasChanges(false);
+      setEditing({ firstname: false, lastname: false, number: false });
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      message.error("Failed to update profile");
+    }
   };
 
   return (

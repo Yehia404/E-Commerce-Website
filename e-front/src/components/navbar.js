@@ -3,18 +3,17 @@ import { FaUser, FaShoppingCart, FaSearch } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
 import { Drawer, Button, Input, Dropdown, Menu } from "antd";
 import { MenuOutlined } from "@ant-design/icons";
-import { useUser } from "../context/usercontext"; // Import UserContext
+import { useUser } from "../context/usercontext";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
 
   const { isLoggedIn, isAdmin, logout } = useUser();
 
   const toggleMenu = () => {
-    if (isLoggedIn) {
-      setIsOpen(!isOpen);
-    }
+    setIsOpen(!isOpen);
   };
 
   const closeMenu = () => {
@@ -34,10 +33,23 @@ const Navbar = () => {
     navigate("/login");
   };
 
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+  };
+
+  const handleSearchSubmit = (e) => {
+    if (e.key === "Enter") {
+      navigate(`/shop?search=${searchQuery}`);
+    }
+  };
+
   const dropdownMenu = (
     <Menu>
       <Menu.Item key="profile" onClick={() => navigate("/profile")}>
         Profile
+      </Menu.Item>
+      <Menu.Item key="orders" onClick={() => navigate("/order")}>
+        Orders
       </Menu.Item>
       <Menu.Item key="logout" onClick={handleLogout}>
         Logout
@@ -47,18 +59,14 @@ const Navbar = () => {
 
   return (
     <>
-      {/* Navbar */}
       <nav className="flex items-center justify-between p-6 shadow-md relative z-10">
-        {/* Hamburger Menu */}
         <Button
           className="text-2xl"
           icon={<MenuOutlined />}
           onClick={toggleMenu}
           type="text"
-          disabled={!isLoggedIn} // Disable button if not logged in
         />
 
-        {/* Logo */}
         <Link
           to="/home"
           className="absolute left-1/2 transform -translate-x-1/2 text-5xl font-extrabold"
@@ -67,18 +75,18 @@ const Navbar = () => {
           VibeWear
         </Link>
 
-        {/* Right Section: Search + Icons */}
         <div className="flex items-center gap-6">
-          {/* Search Bar (Hidden on small screens) */}
           <div className="relative hidden lg:block">
             <Input
               placeholder="Search for products..."
               prefix={<FaSearch className="text-gray-500" />}
               className="lg:w-64 rounded-full bg-gray-100 text-sm border border-gray-300"
+              value={searchQuery}
+              onChange={handleSearchChange}
+              onKeyPress={handleSearchSubmit}
             />
           </div>
 
-          {/* Admin Panel Button */}
           {isAdmin && (
             <Link
               to="/admin"
@@ -88,7 +96,6 @@ const Navbar = () => {
             </Link>
           )}
 
-          {/* User Icon with Dropdown */}
           <Dropdown
             overlay={dropdownMenu}
             trigger={isLoggedIn ? ["hover"] : []}
@@ -101,14 +108,12 @@ const Navbar = () => {
             </div>
           </Dropdown>
 
-          {/* Cart Icon */}
           <Link to="/cart" className="text-xl">
             <FaShoppingCart />
           </Link>
         </div>
       </nav>
 
-      {/* Drawer for small screens */}
       <Drawer
         placement="left"
         closable={false}
@@ -127,23 +132,17 @@ const Navbar = () => {
               Shop All
             </li>
           </Link>
-          <Link to="/product">
-            <li className="cursor-pointer hover:bg-gray-300 p-2 rounded">
-              Product
-            </li>
-          </Link>
-          <Link to="/new-arrivals">
+          <Link to="/shop?gender=Men">
             <li className="cursor-pointer hover:bg-gray-300 p-2 rounded">
               Men
             </li>
           </Link>
-          <Link to="/brands">
+          <Link to="/shop?gender=Women">
             <li className="cursor-pointer hover:bg-gray-300 p-2 rounded">
               Women
             </li>
           </Link>
 
-          {/* Admin Panel */}
           {isAdmin && (
             <Link to="/admin">
               <li className="cursor-pointer hover:bg-gray-300 hover:text-black p-2 rounded font-semibold bg-black text-white">
@@ -152,12 +151,14 @@ const Navbar = () => {
             </Link>
           )}
 
-          {/* Search in Drawer (mobile only) */}
           <div className="mt-4 lg:hidden">
             <Input
               placeholder="Search for products..."
               prefix={<FaSearch className="text-gray-500" />}
               className="w-full rounded-lg border border-gray-300"
+              value={searchQuery}
+              onChange={handleSearchChange}
+              onKeyPress={handleSearchSubmit}
             />
           </div>
         </ul>
