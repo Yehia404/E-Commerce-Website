@@ -27,7 +27,7 @@ const Product = () => {
   const [showAddedToCartBubble, setShowAddedToCartBubble] = useState(false);
 
   const { addToCart } = useCart();
-  const { isLoggedIn } = useUser(); // Access isLoggedIn from user context
+  const { isLoggedIn, token } = useUser(); // Access isLoggedIn and token from user context
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -135,10 +135,15 @@ const Product = () => {
     }
 
     try {
-      // Send the review to the backend
+      // Send the review to the backend with the token
       const response = await axios.post(
         `http://localhost:5000/api/products/${id}/reviews`,
-        reviewInput
+        reviewInput,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
 
       // Update the product data with the new review

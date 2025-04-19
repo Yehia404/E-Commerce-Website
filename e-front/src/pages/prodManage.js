@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Modal, Table, Tag, message } from "antd";
 import axios from "axios";
+import { useUser } from "../context/usercontext";
 
 const ProdManage = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -17,6 +18,7 @@ const ProdManage = () => {
   const [errors, setErrors] = useState({});
   const [backendError, setBackendError] = useState("");
   const [isEditMode, setIsEditMode] = useState(false);
+  const { token } = useUser();
 
   const allowedSizes = ["XS", "S", "M", "L", "XL"];
   const allowedStyles = ["Casual", "Formal", "Party", "Sport"];
@@ -28,7 +30,12 @@ const ProdManage = () => {
   const fetchProducts = async () => {
     try {
       const res = await axios.get(
-        "http://localhost:5000/api/products/allproducts"
+        "http://localhost:5000/api/products/allproducts",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
       setProducts(res.data);
     } catch (err) {
@@ -112,13 +119,23 @@ const ProdManage = () => {
       if (isEditMode) {
         await axios.put(
           `http://localhost:5000/api/products/${product.name}`,
-          finalProduct
+          finalProduct,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
         );
         message.success("Product updated successfully");
       } else {
         await axios.post(
           "http://localhost:5000/api/products/addproduct",
-          finalProduct
+          finalProduct,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
         );
         message.success("Product added successfully");
       }
@@ -133,7 +150,11 @@ const ProdManage = () => {
 
   const handleRemove = async (name) => {
     try {
-      await axios.delete(`http://localhost:5000/api/products/${name}`);
+      await axios.delete(`http://localhost:5000/api/products/${name}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       message.success("Product removed successfully");
       fetchProducts();
     } catch (err) {

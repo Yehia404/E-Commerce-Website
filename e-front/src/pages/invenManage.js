@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Table, Modal, Form, Input, Button, Checkbox, Row, Col } from "antd";
 import axios from "axios";
+import { useUser } from "../context/usercontext";
 
 const InvenManage = () => {
   const [products, setProducts] = useState([]);
@@ -8,6 +9,7 @@ const InvenManage = () => {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [errors, setErrors] = useState({ discount: "", stock: {} });
+  const { token } = useUser();
 
   useEffect(() => {
     fetchProducts();
@@ -16,7 +18,12 @@ const InvenManage = () => {
   const fetchProducts = async () => {
     try {
       const res = await axios.get(
-        "http://localhost:5000/api/products/inventory"
+        "http://localhost:5000/api/products/inventory",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
       setProducts(res.data);
     } catch (err) {
@@ -48,6 +55,11 @@ const InvenManage = () => {
           sizes,
           available,
           discount,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
       );
 
