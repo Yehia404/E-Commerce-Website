@@ -4,6 +4,7 @@ import Sidebar from "../components/sidebar";
 import ProdManage from "./prodManage";
 import OrderManage from "./orderManage";
 import InvenManage from "./invenManage";
+import PromoManage from "./promoManage"; // Import PromoManage component
 
 const Admin = () => {
   return (
@@ -27,10 +28,11 @@ const Admin = () => {
               </div>
             }
           />
-
           <Route path="/prodManage" element={<ProdManage />} />
           <Route path="/orderManage" element={<OrderManage />} />
           <Route path="/invenManage" element={<InvenManage />} />
+          <Route path="/promoManage" element={<PromoManage />} />{" "}
+          {/* New Route */}
         </Routes>
       </div>
     </div>

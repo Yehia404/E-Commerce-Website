@@ -52,6 +52,18 @@ const Sidebar = () => {
             Inventory Management
           </NavLink>
         </li>
+        <li>
+          <NavLink
+            to="/admin/promoManage"
+            className={({ isActive }) =>
+              `block p-3 rounded hover:bg-gray-700 ${
+                isActive ? "bg-gray-800" : ""
+              }`
+            }
+          >
+            PromoCode Management
+          </NavLink>
+        </li>
       </ul>
 
       {/* Bottom Link with Icon */}
