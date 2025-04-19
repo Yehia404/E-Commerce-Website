@@ -2,6 +2,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const Order = require("../models/Order");
+const Product = require("../models/Product");
 
 // Register User
 const registerUser = async (req, res) => {
@@ -105,6 +106,47 @@ const createOrder = async (req, res) => {
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
+    }
+
+    // Iterate over each product in the order
+    for (const productOrder of products) {
+      const { name, size, quantity } = productOrder;
+
+      // Find the product by name
+      const product = await Product.findOne({ name: name });
+      if (!product) {
+        return res
+          .status(404)
+          .json({ message: `Product with name ${name} not found` });
+      }
+
+      // Ensure the sizes field is an array
+      if (!Array.isArray(product.sizes)) {
+        return res.status(400).json({
+          message: `Size information is missing for product ${product.name}`,
+        });
+      }
+
+      // Find the size entry for the specified size
+      const sizeEntry = product.sizes.find((entry) => entry.size === size);
+      if (!sizeEntry) {
+        return res.status(400).json({
+          message: `Size ${size} not available for product ${product.name}`,
+        });
+      }
+
+      // Check if there is enough stock
+      if (sizeEntry.stock < quantity) {
+        return res.status(400).json({
+          message: `Insufficient stock for product ${product.name} in size ${size}`,
+        });
+      }
+
+      // Decrement the stock
+      sizeEntry.stock -= quantity;
+
+      // Save the updated product
+      await product.save();
     }
 
     // Create a new order

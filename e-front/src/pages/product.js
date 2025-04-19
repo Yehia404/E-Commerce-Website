@@ -4,7 +4,9 @@ import Navbar from "../components/navbar";
 import Footer from "../components/footer";
 import axios from "axios";
 import { useCart } from "../context/cartcontext";
-import { useUser } from "../context/usercontext"; // Import useUser to access user context
+import { useUser } from "../context/usercontext";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const Product = () => {
   const { id } = useParams();
@@ -24,10 +26,9 @@ const Product = () => {
     user: "",
     comment: "",
   });
-  const [showAddedToCartBubble, setShowAddedToCartBubble] = useState(false);
 
   const { addToCart } = useCart();
-  const { isLoggedIn, token } = useUser(); // Access isLoggedIn and token from user context
+  const { isLoggedIn, token } = useUser();
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -37,7 +38,6 @@ const Product = () => {
         );
         const product = response.data;
 
-        // Repeat the single image URL to simulate multiple images
         const repeatedImages = Array(3).fill(product.image);
 
         setProductData({
@@ -45,7 +45,6 @@ const Product = () => {
           images: repeatedImages,
         });
 
-        // Set the initial selected image
         setSelectedImage(repeatedImages[0]);
       } catch (err) {
         console.error("Error fetching product:", err);
@@ -67,7 +66,7 @@ const Product = () => {
 
   const handleAddToCart = () => {
     if (!isLoggedIn) {
-      navigate("/login"); // Redirect to login if not logged in
+      navigate("/login");
       return;
     }
 
@@ -87,13 +86,21 @@ const Product = () => {
 
     addToCart(productToAdd);
 
-    setShowAddedToCartBubble(true);
-    setTimeout(() => setShowAddedToCartBubble(false), 3000);
+    // Show toast notification
+    toast.success("Added to cart!", {
+      position: "top-right",
+      autoClose: 3000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      progress: undefined,
+    });
   };
 
   const handleWriteReview = () => {
     if (!isLoggedIn) {
-      navigate("/login"); // Redirect to login if not logged in
+      navigate("/login");
     } else {
       setShowReviewForm(true);
     }
@@ -114,13 +121,13 @@ const Product = () => {
     0
   );
   const lowStockThreshold = 10;
-  const isLowStock = totalStock < lowStockThreshold;
+  const isLowStock = totalStock < lowStockThreshold && totalStock > 0;
+  const isSoldOut = totalStock === 0;
 
   const handleReviewSubmit = async (e) => {
     e.preventDefault();
     let errors = { user: "", comment: "" };
 
-    // Validate inputs
     if (!reviewInput.user) {
       errors.user = "Name is required.";
     }
@@ -128,14 +135,12 @@ const Product = () => {
       errors.comment = "Review comment is required.";
     }
 
-    // If there are errors, don't submit the form
     if (errors.user || errors.comment) {
       setReviewErrors(errors);
       return;
     }
 
     try {
-      // Send the review to the backend with the token
       const response = await axios.post(
         `http://localhost:5000/api/products/${id}/reviews`,
         reviewInput,
@@ -146,9 +151,8 @@ const Product = () => {
         }
       );
 
-      // Update the product data with the new review
       setProductData(response.data);
-      setShowReviewForm(false); // Close the modal
+      setShowReviewForm(false);
       setReviewInput({
         user: "",
         comment: "",
@@ -157,7 +161,7 @@ const Product = () => {
       setReviewErrors({
         user: "",
         comment: "",
-      }); // Reset error messages
+      });
     } catch (err) {
       console.error("Error submitting review:", err);
     }
@@ -166,8 +170,8 @@ const Product = () => {
   return (
     <div>
       <Navbar />
+      <ToastContainer />
       <div className="max-w-7xl mx-auto px-4 py-8 flex flex-col md:flex-row gap-10">
-        {/* Image Section */}
         <div className="flex gap-4">
           <div className="flex flex-col gap-4">
             {productData.images.map((img, i) => (
@@ -189,7 +193,6 @@ const Product = () => {
           />
         </div>
 
-        {/* Product Info */}
         <div className="flex-1 space-y-6">
           <h2 className="text-2xl font-bold">{productData.name}</h2>
           <p className="text-gray-600">{productData.description}</p>
@@ -238,7 +241,12 @@ const Product = () => {
                 {size}
               </button>
             ))}
-            {isLowStock && (
+            {isSoldOut && (
+              <div className="ml-4 p-2 text-red-500 bg-red-100 rounded-full text-xs font-semibold">
+                Sold Out
+              </div>
+            )}
+            {isLowStock && !isSoldOut && (
               <div className="ml-4 p-2 text-red-500 bg-red-100 rounded-full text-xs font-semibold">
                 Low Stock
               </div>
@@ -266,16 +274,11 @@ const Product = () => {
           <div className="relative">
             <button
               onClick={handleAddToCart}
-              disabled={!selectedSize}
+              disabled={!selectedSize || isSoldOut}
               className="px-6 py-3 bg-black text-white rounded-md disabled:opacity-50"
             >
               Add to Cart
             </button>
-            {showAddedToCartBubble && (
-              <div className="absolute top-0 right-0 mt-2 mr-2 p-2 bg-green-500 text-white rounded-full text-sm">
-                Added to cart
-              </div>
-            )}
           </div>
 
           <div className="mt-8">
@@ -301,7 +304,6 @@ const Product = () => {
               )}
               {activeTab === "reviews" && (
                 <div className="space-y-4">
-                  {/* Display Reviews */}
                   {productData.reviews.map((review, i) => (
                     <div key={i} className="border-b pb-2">
                       <p className="font-semibold">{review.user}</p>
@@ -314,7 +316,6 @@ const Product = () => {
                     </div>
                   ))}
 
-                  {/* Write Review Button */}
                   <div className="flex justify-end">
                     <button
                       onClick={handleWriteReview}
@@ -324,11 +325,9 @@ const Product = () => {
                     </button>
                   </div>
 
-                  {/* Modal for Review Form */}
                   {showReviewForm && (
                     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                       <div className="bg-white rounded-lg p-6 w-full max-w-md relative shadow-lg">
-                        {/* Close Button */}
                         <button
                           onClick={() => setShowReviewForm(false)}
                           className="absolute top-2 right-2 text-gray-600 hover:text-black text-xl"
@@ -356,7 +355,6 @@ const Product = () => {
                             }
                             className="w-full border rounded-md p-2"
                           />
-                          {/* Error message for user */}
                           {reviewErrors.user && (
                             <p className="text-red-500 text-sm">
                               {reviewErrors.user}
@@ -374,7 +372,6 @@ const Product = () => {
                             }
                             className="w-full border rounded-md p-2"
                           />
-                          {/* Error message for comment */}
                           {reviewErrors.comment && (
                             <p className="text-red-500 text-sm">
                               {reviewErrors.comment}

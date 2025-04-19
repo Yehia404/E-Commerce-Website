@@ -21,7 +21,11 @@ const Home = () => {
         const response = await axios.get(
           "http://localhost:5000/api/products/newarrivals"
         );
-        setNewArrivals(response.data.slice(0, 4));
+        // Filter products where available is true
+        const availableProducts = response.data.filter(
+          (product) => product.available
+        );
+        setNewArrivals(availableProducts.slice(0, 4));
       } catch (error) {
         console.error("Error fetching new arrivals:", error);
       }
@@ -32,7 +36,11 @@ const Home = () => {
         const response = await axios.get(
           "http://localhost:5000/api/products/collection"
         );
-        setCollection(response.data.slice(0, 4));
+        // Filter products where available is true
+        const availableProducts = response.data.filter(
+          (product) => product.available
+        );
+        setCollection(availableProducts.slice(0, 4));
       } catch (error) {
         console.error("Error fetching collection items:", error);
       }
