@@ -1,4 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from "react";
+import { useUser } from "./usercontext";
 
 const CartContext = createContext();
 
@@ -11,13 +12,8 @@ export const CartProvider = ({ children }) => {
     const savedCart = localStorage.getItem("cart");
     return savedCart ? JSON.parse(savedCart) : [];
   });
-
+  const { token } = useUser();
   const [discountPercentage, setDiscountPercentage] = useState(0);
-
-  // () => {
-  //   const savedDiscount = localStorage.getItem("discountPercentage");
-  //   return savedDiscount ? parseFloat(savedDiscount) : 0;
-  // };
 
   const [subtotal, setSubtotal] = useState(() => {
     const savedSubtotal = localStorage.getItem("subtotal");
@@ -51,7 +47,6 @@ export const CartProvider = ({ children }) => {
     localStorage.setItem("subtotal", newSubtotal.toFixed(2));
     localStorage.setItem("discount", newDiscount.toFixed(2));
     localStorage.setItem("total", newTotal.toFixed(2));
-    // localStorage.setItem("discountPercentage", discountPercentage.toString());
   }, [cart, discountPercentage]);
 
   const addToCart = (product) => {
@@ -89,13 +84,38 @@ export const CartProvider = ({ children }) => {
     setCart((prevCart) => prevCart.filter((item) => item.id !== id));
   };
 
-  const applyPromoCode = (code) => {
-    if (code.toUpperCase() === "SAVE20") {
-      setDiscountPercentage(20);
-      alert("Promo code applied! You get a 20% discount.");
-    } else {
-      setDiscountPercentage(0);
-      alert("Invalid promo code.");
+  const applyPromoCode = async (code) => {
+    code = code.toUpperCase();
+    if (!token) {
+      console.error("Token is missing");
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        "http://localhost:5000/api/promocodes/validate",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ code }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setDiscountPercentage(data.discountValue);
+        return ""; // No error
+      } else {
+        setDiscountPercentage(0);
+        return data.message; // Return error message
+      }
+    } catch (error) {
+      console.error("Error applying promo code:", error);
+      return "An error occurred while applying the promo code.";
     }
   };
 
@@ -108,13 +128,13 @@ export const CartProvider = ({ children }) => {
         updateQuantity,
         removeItem,
         subtotal,
-        setSubtotal, // Include setter
+        setSubtotal,
         discount,
-        setDiscount, // Include setter
+        setDiscount,
         total,
-        setTotal, // Include setter
+        setTotal,
         discountPercentage,
-        setDiscountPercentage, // Include setter
+        setDiscountPercentage,
         applyPromoCode,
       }}
     >

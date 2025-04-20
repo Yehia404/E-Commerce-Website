@@ -22,7 +22,6 @@ const createPromoCode = async (req, res) => {
   }
 };
 
-// Validate a promo code
 const validatePromoCode = async (req, res) => {
   const { code } = req.body;
 
@@ -48,7 +47,14 @@ const validatePromoCode = async (req, res) => {
         .json({ message: "Promo code usage limit reached" });
     }
 
-    res.status(200).json({ message: "Promo code is valid", promoCode });
+    // Increase the used count
+    promoCode.usedCount += 1;
+    await promoCode.save();
+
+    res.status(200).json({
+      message: "Promo code is valid",
+      discountValue: promoCode.discountValue,
+    });
   } catch (error) {
     console.error("Error validating promo code:", error);
     res.status(500).json({ message: "Server error" });

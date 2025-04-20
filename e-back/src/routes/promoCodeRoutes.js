@@ -13,7 +13,7 @@ const router = express.Router();
 router.post("/create", authMiddleware, createPromoCode);
 
 // Validate a promo code
-router.post("/validate", validatePromoCode);
+router.post("/validate", authMiddleware, validatePromoCode);
 
 // Update a promo code (admin only)
 router.put("/update/:id", authMiddleware, updatePromoCode);

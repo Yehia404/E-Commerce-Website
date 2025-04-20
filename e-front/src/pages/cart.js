@@ -18,10 +18,21 @@ const Cart = () => {
   } = useCart();
   const [currentPage, setCurrentPage] = useState(1);
   const [promoCode, setPromoCode] = useState("");
+  const [promoCodeError, setPromoCodeError] = useState("");
+  const [promoCodeSuccess, setPromoCodeSuccess] = useState("");
+  const [isPromoCodeApplied, setIsPromoCodeApplied] = useState(false);
   const itemsPerPage = 3;
 
-  const handleApplyPromoCode = () => {
-    applyPromoCode(promoCode);
+  const handleApplyPromoCode = async () => {
+    const error = await applyPromoCode(promoCode);
+    if (error) {
+      setPromoCodeError(error);
+      setPromoCodeSuccess("");
+    } else {
+      setPromoCodeError("");
+      setPromoCodeSuccess(`Promo code "${promoCode}" applied successfully!`);
+      setIsPromoCodeApplied(true);
+    }
   };
 
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -114,13 +125,26 @@ const Cart = () => {
                 value={promoCode}
                 onChange={(e) => setPromoCode(e.target.value)}
                 className="w-full border rounded-full px-3 py-3 text-sm focus:outline-none"
+                disabled={isPromoCodeApplied}
               />
               <button
                 onClick={handleApplyPromoCode}
                 className="absolute right-1 top-1 bottom-1 bg-black text-white px-4 text-sm hover:bg-gray-800 rounded-full"
+                disabled={isPromoCodeApplied}
               >
                 Apply
               </button>
+            </div>
+
+            <div>
+              {promoCodeError && (
+                <p className="text-red-500 text-sm mt-2">{promoCodeError}</p>
+              )}
+              {promoCodeSuccess && (
+                <p className="text-green-500 text-sm mt-2">
+                  {promoCodeSuccess}
+                </p>
+              )}
             </div>
 
             <Link
