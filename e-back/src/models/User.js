@@ -41,7 +41,6 @@ const userSchema = new mongoose.Schema(
       required: false,
       default: null,
     },
-    orders: [orderSchema],
   },
   {
     timestamps: true, // adds createdAt and updatedAt

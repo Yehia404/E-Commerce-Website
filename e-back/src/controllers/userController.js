@@ -3,7 +3,6 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const Order = require("../models/Order");
 const Product = require("../models/Product");
-
 // Register User
 const registerUser = async (req, res) => {
   const { firstname, lastname, email, phone, password } = req.body;
@@ -101,7 +100,6 @@ const createOrder = async (req, res) => {
     shippingAddress,
     area,
   } = req.body;
-
   try {
     // Validate user existence
     const user = await User.findById(userId);
@@ -152,6 +150,7 @@ const createOrder = async (req, res) => {
 
     // Create a new order
     const order = new Order({
+      userId,
       firstname,
       lastname,
       phone,
@@ -165,9 +164,6 @@ const createOrder = async (req, res) => {
     });
 
     await order.save();
-    // Save the order to the user's orders array
-    user.orders.push(order);
-    await user.save();
 
     res.status(201).json({
       message: "Order created successfully",
@@ -204,17 +200,6 @@ const editStatus = async (req, res) => {
     order.status = status;
     await order.save();
 
-    // Find the user associated with this order
-    const user = await User.findOne({ "orders._id": id });
-    if (user) {
-      // Update the status in the user's orders array
-      const userOrder = user.orders.id(id);
-      if (userOrder) {
-        userOrder.status = status;
-        await user.save();
-      }
-    }
-
     res.status(200).json({
       message: "Order status updated successfully",
       order,
@@ -229,14 +214,9 @@ const getUserOrders = async (req, res) => {
   const userId = req.user.userId; // Extract userId from token
 
   try {
-    // Find the user by ID
-    const user = await User.findById(userId).populate("orders");
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
+    const orders = await Order.find({"userId": userId})
     // Return the user's orders
-    res.status(200).json(user.orders);
+    res.status(200).json(orders);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server error" });
@@ -261,6 +241,10 @@ const updateUserProfile = async (req, res) => {
     user.phone = phone || user.phone;
     user.image = image || user.image;
 
+    // If a file was uploaded, Cloudinary URL is in req.file.path
+    if (req.file && req.file.path) {
+      user.image = req.file.path;                       
+    }
     // Save the updated user
     await user.save();
 

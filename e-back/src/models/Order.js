@@ -15,6 +15,9 @@ const orderSchema = new mongoose.Schema({
     type: Number,
     unique: true,
   },
+  userId: { 
+    type: mongoose.Schema.Types.ObjectId, ref: 'User' 
+  },
   firstname: {
     type: String,
     required: [true, "Firstname is required"],

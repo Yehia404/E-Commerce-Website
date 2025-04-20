@@ -1,4 +1,5 @@
 const express = require("express");
+const parser  = require('../middleware/upload'); 
 const {
   registerUser,
   loginUser,
@@ -30,6 +31,6 @@ router.get("/user/orders", authMiddleware, getUserOrders);
 router.put("/orders/:id/status", authMiddleware, editStatus);
 
 // Update user profile
-router.put("/profile", authMiddleware, updateUserProfile);
+router.put("/profile", authMiddleware, parser.single('image'),updateUserProfile);
 
 module.exports = router;
