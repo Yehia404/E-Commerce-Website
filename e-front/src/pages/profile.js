@@ -49,10 +49,12 @@ const Profile = () => {
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
+    const previewUrl = URL.createObjectURL(file);
     if (file) {
       setProfile((prev) => ({
         ...prev,
-        image: URL.createObjectURL(file),
+        image: file,
+        preview: previewUrl
       }));
       setHasChanges(true);
     }
@@ -61,14 +63,14 @@ const Profile = () => {
   const handleSave = async () => {
     try {
       console.log("Saving profile:", profile);
+      const formData = new FormData();
+      formData.append('image', profile.image); 
+      formData.append('firstname', profile.firstname);
+      formData.append('lastname',  profile.lastname);
+      formData.append('phone',     profile.number);
       const response = await axios.put(
         "http://localhost:5000/api/users/profile",
-        {
-          firstname: profile.firstname,
-          lastname: profile.lastname,
-          phone: profile.number,
-          image: profile.image,
-        },
+        formData,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -96,6 +98,7 @@ const Profile = () => {
           <div className="flex flex-col items-center gap-4 w-1/3">
             <img
               src={
+                profile.preview ||
                 profile.image ||
                 "https://via.placeholder.com/200x200.png?text=Profile"
               }

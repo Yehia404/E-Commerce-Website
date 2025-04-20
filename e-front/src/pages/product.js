@@ -71,6 +71,8 @@ const Product = () => {
     const sizeEntry = productData.sizes.find((entry) => entry.size === size);
     setAvailableStock(sizeEntry ? sizeEntry.stock : 0);
     setQuantity(1); // Reset quantity to 1 when a new size is selected
+    const label = document.getElementById("sizeNotChosen")
+    label.hidden = true
   };
 
   const handleAddToCart = () => {
@@ -80,6 +82,8 @@ const Product = () => {
     }
 
     if (!selectedSize) {
+      const label = document.getElementById("sizeNotChosen")
+      label.hidden = false
       return;
     }
 
@@ -283,11 +287,13 @@ const Product = () => {
           <div className="relative">
             <button
               onClick={handleAddToCart}
-              disabled={!selectedSize || isSoldOut}
+              disabled={isSoldOut}
               className="px-6 py-3 bg-black text-white rounded-md disabled:opacity-50"
             >
               Add to Cart
             </button>
+            <br></br>
+            <label hidden="true" id="sizeNotChosen" className="mt-1 text-sm text-red-600 font-medium">Please specify a size</label>
           </div>
 
           <div className="mt-8">
