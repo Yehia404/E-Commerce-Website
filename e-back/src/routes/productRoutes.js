@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const authMiddleware = require("../middleware/authMiddleware");
+const parser  = require('../middleware/upload'); 
 const {
   getAllProducts,
   addProduct,
@@ -24,7 +25,7 @@ router.get("/newarrivals", getNewArrivals);
 router.get("/collection", getCollectionItems);
 
 // Add a new product
-router.post("/addproduct", authMiddleware, addProduct);
+router.post("/addproduct", authMiddleware, parser.single('image'),addProduct);
 
 // Get inventory products
 router.get("/inventory", authMiddleware, getInventoryProducts);
@@ -39,7 +40,7 @@ router.get("/:id", getProductById);
 router.post("/:id/reviews", authMiddleware, addReview);
 
 // Edit a product by name
-router.put("/:name", authMiddleware, editProductByName);
+router.put("/:name", authMiddleware, parser.single('image'),editProductByName);
 
 // Remove a product by name
 router.delete("/:name", authMiddleware, removeProductByName);

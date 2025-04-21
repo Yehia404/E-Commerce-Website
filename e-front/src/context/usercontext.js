@@ -28,6 +28,22 @@ export const UserProvider = ({ children }) => {
   }, [navigate]);
 
   useEffect(() => {
+    const responseInterceptor = axios.interceptors.response.use(
+      response => response,
+      error => {
+        if (error.response?.status === 401) {
+          logout(true); // Force immediate logout on 401 errors
+        }
+        return Promise.reject(error);
+      }
+    );
+
+    return () => {
+      axios.interceptors.response.eject(responseInterceptor);
+    };
+  }, [logout]); 
+  
+  useEffect(() => {
     const storedTokenData = localStorage.getItem("authToken");
     const storedUser = localStorage.getItem("user");
 

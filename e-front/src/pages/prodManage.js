@@ -20,6 +20,7 @@ const ProdManage = () => {
   const [backendError, setBackendError] = useState("");
   const [isEditMode, setIsEditMode] = useState(false);
   const { token } = useUser();
+  const [isSaving, setIsSaving] = useState(false);
 
   const allowedSizes = ["XS", "S", "M", "L", "XL"];
   const allowedStyles = ["Casual", "Formal", "Party", "Sport"];
@@ -90,6 +91,28 @@ const ProdManage = () => {
     });
   };
 
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      message.error("Only image files are allowed!");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      message.error("File size must be less than 5MB!");
+      return;
+    }
+
+    const previewUrl = URL.createObjectURL(file);
+    setProduct((prev) => ({
+      ...prev,
+      image: file,
+      preview: previewUrl,
+    }));
+  };
+
   const validate = () => {
     let err = {};
     if (!product.name.trim()) err.name = "Product name is required.";
@@ -99,56 +122,72 @@ const ProdManage = () => {
       err.price = "Valid price is required.";
     if (!product.sizes.length) err.sizes = "At least one size is required.";
     if (!product.details.trim()) err.details = "Details are required.";
-    if (!product.image.trim()) err.image = "Image URL is required.";
     if (!product.style.trim()) err.style = "Style is required.";
     if (!product.gender.trim()) err.gender = "Gender is required.";
+    if (!product.image && !isEditMode) {
+      err.image = "Image is required.";
+    }
+
     return err;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsSaving(true);
 
     const validationErrors = validate();
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
+      setIsSaving(false);
       return;
     }
 
-    const finalProduct = {
-      ...product,
-      price: Number(product.price),
-    };
+    const formData = new FormData();
+    formData.append("name", product.name);
+    formData.append("description", product.description);
+    formData.append("price", product.price);
+    formData.append("details", product.details);
+    formData.append("style", product.style);
+    formData.append("gender", product.gender);
+    formData.append("sizes", JSON.stringify(product.sizes));
+
+    if (product.image instanceof File) {
+      formData.append("image", product.image);
+    } else if (typeof product.image === "string") {
+      formData.append("image", product.image);
+    }
 
     try {
+      const config = {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      };
+
       if (isEditMode) {
         await axios.put(
           `http://localhost:5000/api/products/${product.name}`,
-          finalProduct,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
+          formData,
+          config
         );
         message.success("Product updated successfully");
       } else {
         await axios.post(
           "http://localhost:5000/api/products/addproduct",
-          finalProduct,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
+          formData,
+          config
         );
         message.success("Product added successfully");
       }
+
       fetchProducts();
       resetForm();
       setIsModalVisible(false);
     } catch (err) {
       console.error("Error saving product:", err.response?.data || err.message);
       setBackendError(err.response?.data?.error || "An error occurred");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -313,24 +352,28 @@ const ProdManage = () => {
           </div>
 
           <div>
-            <label className="block font-medium">Image URL</label>
-            <input
-              type="text"
-              name="image"
-              value={product.image}
-              onChange={handleChange}
-              placeholder="https://example.com/image.jpg"
-              className="w-full mt-1 p-1 border rounded-sm"
-            />
-            {errors.image && (
-              <p className="text-red-500 text-xs">{errors.image}</p>
-            )}
-            {product.image && (
-              <img
-                src={product.image}
-                alt="Preview"
-                className="mt-2 w-24 h-24 object-cover rounded"
+            <label className="block font-medium mb-2">Product Image</label>
+            <label className="w-full flex flex-col items-center cursor-pointer">
+              <div className="bg-black text-white px-4 py-2 rounded-full hover:bg-gray-800 transition duration-200">
+                {product.image ? "Change Image" : "Upload Image"}
+              </div>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                className="hidden"
+                disabled={isSaving}
               />
+              {(product.preview || product.image) && (
+                <img
+                  src={product.preview || product.image}
+                  alt="Product preview"
+                  className="mt-4 w-32 h-32 object-cover rounded"
+                />
+              )}
+            </label>
+            {errors.image && (
+              <p className="text-red-500 text-xs mt-1">{errors.image}</p>
             )}
           </div>
 
@@ -342,11 +385,10 @@ const ProdManage = () => {
                   key={size}
                   type="button"
                   onClick={() => handleSizeToggle(size)}
-                  className={`px-3 py-1 rounded-sm ${
-                    product.sizes.some((s) => s.size === size)
-                      ? "bg-blue-500 text-white"
-                      : "bg-gray-200"
-                  }`}
+                  className={`px-3 py-1 rounded-sm ${product.sizes.some((s) => s.size === size)
+                    ? "bg-blue-500 text-white"
+                    : "bg-gray-200"
+                    }`}
                 >
                   {size}
                 </button>
@@ -412,9 +454,10 @@ const ProdManage = () => {
 
           <button
             type="submit"
-            className="w-full py-2 bg-black text-white rounded-sm hover:bg-gray-800"
+            disabled={isSaving}
+            className="w-full py-2 bg-black text-white rounded hover:bg-gray-800 disabled:opacity-50"
           >
-            {isEditMode ? "Update Product" : "Save Product"}
+            {isSaving ? "Saving..." : isEditMode ? "Update Product" : "Add Product"}
           </button>
         </form>
       </Modal>

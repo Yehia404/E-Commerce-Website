@@ -26,9 +26,9 @@ const getProductById = async (req, res) => {
 // Add a new product
 const addProduct = async (req, res) => {
   try {
-    const { name, description, price, sizes, details, image, style, gender } =
+    const { name, description, price, details, image, style, gender } =
       req.body;
-
+    const sizes = JSON.parse(req.body.sizes);
     const newProduct = new Product({
       name,
       description,
@@ -40,6 +40,10 @@ const addProduct = async (req, res) => {
       gender,
     });
 
+    // If a file was uploaded, Cloudinary URL is in req.file.path
+    if (req.file && req.file.path) {
+      newProduct.image = req.file.path;                       
+    }
     await newProduct.save();
     res.status(201).json(newProduct);
   } catch (err) {
@@ -50,8 +54,14 @@ const addProduct = async (req, res) => {
 // Edit a product by name
 const editProductByName = async (req, res) => {
   try {
-    const { name, description, price, sizes, details, image, style, gender } =
+    const { name, description, price, details,style, gender } =
       req.body;
+    const sizes = JSON.parse(req.body.sizes);
+    let image = req.body.image
+    // If a file was uploaded, Cloudinary URL is in req.file.path
+    if (req.file && req.file.path) {
+      image = req.file.path;                       
+    }
     const updatedProduct = await Product.findOneAndUpdate(
       { name: req.params.name },
       { name, description, price, sizes, details, image, style, gender },

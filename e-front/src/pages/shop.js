@@ -79,7 +79,6 @@ const Shop = () => {
 
   // Use the search variable here
   const filteredProducts = products
-    .filter((product) => product.available)
     .filter(
       (product) =>
         !selectedSize ||
