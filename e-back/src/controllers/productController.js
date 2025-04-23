@@ -146,8 +146,14 @@ const addReview = async (req, res) => {
     product.reviews.push(newReview);
     await product.save();
 
-    res.status(201).json(product);
+    // Return the updated product
+    res.status(201).json({
+      message: "Review added successfully",
+      reviews: product.reviews,
+      averageRating: product.reviews.reduce((acc, r) => acc + r.rating, 0) / product.reviews.length
+    });
   } catch (error) {
+    console.error('Error adding review:', error);
     res.status(500).json({ message: "Error adding review" });
   }
 };

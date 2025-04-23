@@ -3,6 +3,9 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const Order = require("../models/Order");
 const Product = require("../models/Product");
+const stripe = require('../utils/stripe');
+const transporter = require('../utils/node_mailer');
+const { createOrderConfirmationEmail } = require('../utils/emailTemplate');
 // Register User
 const registerUser = async (req, res) => {
   const { firstname, lastname, email, phone, password } = req.body;
@@ -86,6 +89,29 @@ const loginUser = async (req, res) => {
   }
 };
 
+const processPayment = async (req, res) => {
+  const { amount, paymentMethodId } = req.body;
+
+  try {
+    // Create payment intent
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: amount * 100, // Stripe expects amount in cents
+      currency: 'usd',
+      payment_method: paymentMethodId,
+      confirm: true,
+      return_url: 'http://localhost:3000/order-confirmation',
+    });
+
+    return res.status(200).json({
+      clientSecret: paymentIntent.client_secret,
+      status: paymentIntent.status,
+    });
+  } catch (error) {
+    console.error('Payment error:', error);
+    return res.status(400).json({ error: error.message });
+  }
+};
+
 // Create Order
 const createOrder = async (req, res) => {
   const userId = req.user.userId; // Extract userId from token
@@ -99,6 +125,7 @@ const createOrder = async (req, res) => {
     paymentMethod,
     shippingAddress,
     area,
+    paymentMethodId,
   } = req.body;
   try {
     // Validate user existence
@@ -106,7 +133,6 @@ const createOrder = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-
     // Iterate over each product in the order
     for (const productOrder of products) {
       const { name, size, quantity } = productOrder;
@@ -165,6 +191,14 @@ const createOrder = async (req, res) => {
 
     await order.save();
 
+    // Send confirmation email
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: 'Order Confirmation',
+      html: createOrderConfirmationEmail(order)
+    };
+    await transporter.sendMail(mailOptions);
     res.status(201).json({
       message: "Order created successfully",
     });
@@ -274,4 +308,5 @@ module.exports = {
   editStatus,
   getUserOrders,
   updateUserProfile,
+  processPayment,
 };

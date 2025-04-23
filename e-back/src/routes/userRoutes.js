@@ -8,6 +8,7 @@ const {
   editStatus,
   getUserOrders,
   updateUserProfile,
+  processPayment,
 } = require("../controllers/userController");
 const authMiddleware = require("../middleware/authMiddleware");
 const router = express.Router();
@@ -32,5 +33,7 @@ router.put("/orders/:id/status", authMiddleware, editStatus);
 
 // Update user profile
 router.put("/profile", authMiddleware, parser.single('image'),updateUserProfile);
+
+router.post("/payment/process", authMiddleware, processPayment);
 
 module.exports = router;
