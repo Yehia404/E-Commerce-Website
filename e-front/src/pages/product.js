@@ -164,7 +164,10 @@ const Product = () => {
         }
       );
 
-      setProductData(response.data);
+      setProductData(prevData => ({
+        ...prevData,
+        reviews: response.data.reviews || prevData.reviews
+      }));  
       setShowReviewForm(false);
       setReviewInput({
         user: "",

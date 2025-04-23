@@ -5,6 +5,105 @@ import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../context/cartcontext";
 import { useUser } from "../context/usercontext";
 import axios from "axios";
+import { loadStripe } from '@stripe/stripe-js';
+import { CardElement, Elements, useStripe, useElements } from '@stripe/react-stripe-js';
+
+const stripePromise = loadStripe('pk_test_51RGWIO2Mm0DbrXihYk4y69hmAJ6eQ3BMVAjy9q7eKOdnWqugGxBzTGEfbXGHPa3dR5dQWIDfmEikaxfq7PdERdhT00kuMfYcGD');
+const cardStyle = {
+  style: {
+    base: {
+      color: "#32325d",
+      fontFamily: 'Arial, sans-serif',
+      fontSmoothing: "antialiased",
+      fontSize: "16px",
+      "::placeholder": {
+        color: "#32325d"
+      }
+    },
+    invalid: {
+      color: "#fa755a",
+      iconColor: "#fa755a"
+    }
+  }
+};
+
+
+const PaymentForm = ({ formData, total, deliveryFee, handlePaymentSuccess, validate }) => {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [error, setError] = useState(null);
+  const [processing, setProcessing] = useState(false);
+  const { token } = useUser()
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setProcessing(true);
+
+    if (!validate()) {
+      setProcessing(false);
+      setError('Please fill in all required fields correctly');
+      return;
+    }
+    if (!stripe || !elements) {
+      return;
+    }
+
+    const { error, paymentMethod } = await stripe.createPaymentMethod({
+      type: 'card',
+      card: elements.getElement(CardElement),
+      billing_details: {
+        name: formData.cardName,
+        email: formData.email,
+      },
+    });
+
+    if (error) {
+      setError(error.message);
+      setProcessing(false);
+      return;
+    }
+
+    try {
+      const { data } = await axios.post('http://localhost:5000/api/users/payment/process', {
+        paymentMethodId: paymentMethod.id,
+        amount: total + deliveryFee,
+      },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          }
+        }
+      );
+
+      if (data.status === 'succeeded') {
+        await handlePaymentSuccess();
+        console.log("Payment succeeded, calling handlePaymentSuccess");
+        setError(null)
+
+      }
+    } catch (err) {
+      console.error('Payment error:', err);
+      setError('Payment failed. Please try again.');
+    }
+    setProcessing(false);
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <div className="mb-4">
+        <CardElement options={cardStyle} />
+      </div>
+      {error && <div className="text-red-500 mb-4">{error}</div>}
+      <button
+        type="submit"
+        disabled={processing}
+        className={`w-full bg-black text-white p-2 rounded-full`}
+      >
+        {processing ? 'Processing...' : 'Pay Now'}
+      </button>
+    </form>
+  );
+};
+
 
 function CheckoutPage() {
   const {
@@ -124,11 +223,6 @@ function CheckoutPage() {
     if (!formData.email.trim()) errs.email = "Required";
     if (formData.method === "mastercard" || formData.method === "visa") {
       if (!formData.cardName.trim()) errs.cardName = "Required";
-      if (!/^\d{16}$/.test(formData.cardNumber.replace(/\s/g, "")))
-        errs.cardNumber = "Must be 16 digits";
-      if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(formData.expiration))
-        errs.expiration = "Format MM/YY";
-      if (!/^\d{3,4}$/.test(formData.cvv)) errs.cvv = "Must be 3 or 4 digits";
     }
     if (!formData.area) errs.area = "Select an area";
     if (!formData.method) errs.method = "Select payment method";
@@ -175,7 +269,6 @@ function CheckoutPage() {
             },
           }
         );
-
         // Clear the cart and related local storage items
         setCart([]);
         setSubtotal(0);
@@ -200,6 +293,9 @@ function CheckoutPage() {
     setDeliveryFee(selectedArea ? selectedArea.fee : 0);
     handleChange("area", value);
   };
+
+
+
 
   return (
     <div>
@@ -314,161 +410,120 @@ function CheckoutPage() {
             </div>
           </div>
 
-          {/* Order Summary */}
-          <div className="w-full lg:w-[400px] bg-white rounded-2xl shadow p-6 space-y-4">
-            <h2 className="font-bold text-lg">Order Summary</h2>
-            <div className="flex justify-between text-sm text-gray-600">
-              <span>Subtotal</span>
-              <span>${subtotal.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between text-sm text-gray-600">
-              <span>Discount ({discountPercentage}%)</span>
-              <span className="text-red-500">-${discount.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between text-sm text-gray-600">
-              <span>Delivery Fee</span>
-              <span>${deliveryFee.toFixed(2)}</span>
-            </div>
-            <div className="border-t pt-4 flex justify-between font-bold">
-              <span>Total</span>
-              <span>${(total + deliveryFee).toFixed(2)}</span>
+          {/* Order Summary and Payment */}
+          <div className="space-y-6">
+            {/* Order Summary */}
+            <div className="bg-gray-50 p-6 rounded-lg">
+              <h2 className="font-bold text-lg mb-4">Order Summary</h2>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm text-gray-600">
+                  <span>Subtotal</span>
+                  <span>${subtotal.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-sm text-gray-600">
+                  <span>Discount ({discountPercentage}%)</span>
+                  <span className="text-red-500">-${discount.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-sm text-gray-600">
+                  <span>Delivery Fee</span>
+                  <span>${deliveryFee.toFixed(2)}</span>
+                </div>
+                <div className="border-t pt-2 mt-2 flex justify-between font-bold">
+                  <span>Total</span>
+                  <span>${(total + deliveryFee).toFixed(2)}</span>
+                </div>
+              </div>
             </div>
 
             {/* Payment Information */}
-            <h2 className="font-semibold text-lg mb-4 text-gray-700">
-              Payment Information
-            </h2>
-            <div className="flex gap-3 mb-4">
-              <button
-                onClick={() => handleChange("method", "mastercard")}
-                className={`border p-2 rounded-md ${
-                  formData.method === "mastercard"
-                    ? "ring-2 ring-purple-500"
-                    : ""
-                }`}
-              >
-                <img
-                  src="https://img.icons8.com/color/48/mastercard-logo.png"
-                  alt="Mastercard"
-                  className="w-8 h-8"
-                />
-              </button>
-              <button
-                onClick={() => handleChange("method", "visa")}
-                className={`border p-2 rounded-md ${
-                  formData.method === "visa" ? "ring-2 ring-purple-500" : ""
-                }`}
-              >
-                <img
-                  src="https://img.icons8.com/color/48/000000/visa.png"
-                  alt="Visa"
-                  className="w-8 h-8"
-                />
-              </button>
-              <button
-                onClick={() => handleChange("method", "cod")}
-                className={`border p-2 rounded-md ${
-                  formData.method === "cod" ? "ring-2 ring-purple-500" : ""
-                }`}
-              >
-                COD
-              </button>
-            </div>
-            {errors.method && (
-              <p className="text-red-500 text-sm">{errors.method}</p>
-            )}
-
-            {(formData.method === "mastercard" ||
-              formData.method === "visa") && (
-              <div className="space-y-4">
-                <div>
-                  <label className="block mb-1 text-sm font-medium text-gray-700">
-                    Name on Card
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full border rounded-md p-2"
-                    placeholder="Name on Card"
-                    value={formData.cardName}
-                    onChange={(e) => handleChange("cardName", e.target.value)}
-                    onBlur={() => handleBlur("cardName")}
+            <div>
+              <h2 className="font-semibold text-lg mb-4 text-gray-700">
+                Payment Information
+              </h2>
+              <div className="flex gap-3 mb-4">
+                <button
+                  onClick={() => handleChange("method", "mastercard")}
+                  className={`border p-2 rounded-md ${formData.method === "mastercard" ? "ring-2 ring-purple-500" : ""
+                    }`}
+                >
+                  <img
+                    src="https://img.icons8.com/color/48/mastercard-logo.png"
+                    alt="Mastercard"
+                    className="w-8 h-8"
                   />
-                  {errors.cardName && (
-                    <p className="text-red-500 text-sm">{errors.cardName}</p>
-                  )}
-                </div>
-                <div>
-                  <label className="block mb-1 text-sm font-medium text-gray-700">
-                    Card number
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full border rounded-md p-2"
-                    placeholder="1234 5678 9012 3456"
-                    value={formData.cardNumber}
-                    onChange={(e) => handleChange("cardNumber", e.target.value)}
-                    onBlur={() => handleBlur("cardNumber")}
+                </button>
+                <button
+                  onClick={() => handleChange("method", "visa")}
+                  className={`border p-2 rounded-md ${formData.method === "visa" ? "ring-2 ring-purple-500" : ""
+                    }`}
+                >
+                  <img
+                    src="https://img.icons8.com/color/48/000000/visa.png"
+                    alt="Visa"
+                    className="w-8 h-8"
                   />
-                  {errors.cardNumber && (
-                    <p className="text-red-500 text-sm">{errors.cardNumber}</p>
-                  )}
-                </div>
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <div className="sm:w-1/2">
-                    <label className="block mb-1 text-sm font-medium text-gray-700">
-                      Expiration
-                    </label>
-                    <input
-                      type="text"
-                      className="w-full border rounded-md p-2"
-                      placeholder="MM/YY"
-                      value={formData.expiration}
-                      onChange={(e) =>
-                        handleChange("expiration", e.target.value)
-                      }
-                      onBlur={() => handleBlur("expiration")}
-                    />
-                    {errors.expiration && (
-                      <p className="text-red-500 text-sm">
-                        {errors.expiration}
-                      </p>
-                    )}
-                  </div>
-                  <div className="sm:w-1/2">
-                    <label className="block mb-1 text-sm font-medium text-gray-700">
-                      CVV
-                    </label>
-                    <input
-                      type="text"
-                      className="w-full border rounded-md p-2"
-                      placeholder="123"
-                      value={formData.cvv}
-                      onChange={(e) => handleChange("cvv", e.target.value)}
-                      onBlur={() => handleBlur("cvv")}
-                    />
-                    {errors.cvv && (
-                      <p className="text-red-500 text-sm">{errors.cvv}</p>
-                    )}
-                  </div>
-                </div>
+                </button>
+                <button
+                  onClick={() => handleChange("method", "cod")}
+                  className={`border p-2 rounded-md ${formData.method === "cod" ? "ring-2 ring-purple-500" : ""
+                    }`}
+                >
+                  COD
+                </button>
               </div>
-            )}
-          </div>
+              {errors.method && (
+                <p className="text-red-500 text-sm">{errors.method}</p>
+              )}
 
-          {/* Confirm Button */}
-          <div className="flex flex-col sm:flex-row justify-between items-center pt-6 gap-4">
-            <Link
-              to="/cart"
-              className="border bg-black text-white p-2 px-10 hover:bg-gray-500 rounded-full w-full sm:w-auto text-center"
-            >
-              Back
-            </Link>
-            <button
-              className="bg-black text-white p-2 px-6 rounded-full hover:bg-gray-500 w-full sm:w-auto"
-              onClick={handleConfirm}
-            >
-              Confirm Payment
-            </button>
+              {/* Stripe Card Element */}
+              {(formData.method === "mastercard" || formData.method === "visa") && (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block mb-1 text-sm font-medium text-gray-700">
+                      Name on Card
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full border rounded-md p-2"
+                      placeholder="Name on Card"
+                      value={formData.cardName}
+                      onChange={(e) => handleChange("cardName", e.target.value)}
+                      onBlur={() => handleBlur("cardName")}
+                    />
+                    {errors.cardName && (
+                      <p className="text-red-500 text-sm">{errors.cardName}</p>
+                    )}
+                  </div>
+                  <Elements stripe={stripePromise}>
+                    <PaymentForm
+                      formData={formData}
+                      total={total}
+                      deliveryFee={deliveryFee}
+                      handlePaymentSuccess={handleConfirm}
+                      validate={validate}
+                    />
+                  </Elements>
+                </div>
+              )}
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row gap-4 mt-6">
+              <Link
+                to="/cart"
+                className="border bg-black text-white p-2 px-10 hover:bg-gray-500 rounded-full w-full sm:w-auto text-center"
+              >
+                Back
+              </Link>
+              {formData.method === "cod" && (
+                <button
+                  className="bg-black text-white p-2 px-6 rounded-full hover:bg-gray-500 w-full sm:w-auto"
+                  onClick={handleConfirm}
+                >
+                  Confirm Order
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
