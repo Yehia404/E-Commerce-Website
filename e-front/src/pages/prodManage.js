@@ -1,0 +1,468 @@
+import React, { useState, useEffect } from "react";
+import { Modal, Table, Tag, message } from "antd";
+import axios from "axios";
+import { useUser } from "../context/usercontext";
+
+const ProdManage = () => {
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [products, setProducts] = useState([]);
+  const [product, setProduct] = useState({
+    name: "",
+    description: "",
+    price: "",
+    image: "",
+    sizes: [],
+    details: "",
+    style: "",
+    gender: "",
+  });
+  const [errors, setErrors] = useState({});
+  const [backendError, setBackendError] = useState("");
+  const [isEditMode, setIsEditMode] = useState(false);
+  const { token } = useUser();
+  const [isSaving, setIsSaving] = useState(false);
+
+  const allowedSizes = ["XS", "S", "M", "L", "XL"];
+  const allowedStyles = ["Casual", "Formal", "Party", "Sport"];
+  const allowedGenders = ["Men", "Women", "Unisex"];
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const fetchProducts = async () => {
+    try {
+      const res = await axios.get(
+        "http://localhost:5000/api/products/allproducts",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      setProducts(res.data);
+    } catch (err) {
+      console.error("Error fetching products", err);
+    }
+  };
+
+  const showModal = (product = null) => {
+    if (product) {
+      setProduct(product);
+      setIsEditMode(true);
+    } else {
+      resetForm();
+      setIsEditMode(false);
+    }
+    setIsModalVisible(true);
+  };
+
+  const handleCancel = () => {
+    setIsModalVisible(false);
+    resetForm();
+  };
+
+  const resetForm = () => {
+    setProduct({
+      name: "",
+      description: "",
+      price: "",
+      image: "",
+      sizes: [],
+      details: "",
+      style: "",
+      gender: "",
+    });
+    setErrors({});
+    setBackendError("");
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setProduct({ ...product, [name]: value });
+  };
+
+  const handleSizeToggle = (size) => {
+    setProduct((prevProduct) => {
+      const sizes = prevProduct.sizes.some((s) => s.size === size)
+        ? prevProduct.sizes.filter((s) => s.size !== size)
+        : [...prevProduct.sizes, { size, stock: 0 }];
+      return { ...prevProduct, sizes };
+    });
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      message.error("Only image files are allowed!");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      message.error("File size must be less than 5MB!");
+      return;
+    }
+
+    const previewUrl = URL.createObjectURL(file);
+    setProduct((prev) => ({
+      ...prev,
+      image: file,
+      preview: previewUrl,
+    }));
+  };
+
+  const validate = () => {
+    let err = {};
+    if (!product.name.trim()) err.name = "Product name is required.";
+    if (!product.description.trim())
+      err.description = "Description is required.";
+    if (!product.price || isNaN(product.price) || Number(product.price) <= 0)
+      err.price = "Valid price is required.";
+    if (!product.sizes.length) err.sizes = "At least one size is required.";
+    if (!product.details.trim()) err.details = "Details are required.";
+    if (!product.style.trim()) err.style = "Style is required.";
+    if (!product.gender.trim()) err.gender = "Gender is required.";
+    if (!product.image && !isEditMode) {
+      err.image = "Image is required.";
+    }
+
+    return err;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSaving(true);
+
+    const validationErrors = validate();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      setIsSaving(false);
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("name", product.name);
+    formData.append("description", product.description);
+    formData.append("price", product.price);
+    formData.append("details", product.details);
+    formData.append("style", product.style);
+    formData.append("gender", product.gender);
+    formData.append("sizes", JSON.stringify(product.sizes));
+
+    if (product.image instanceof File) {
+      formData.append("image", product.image);
+    } else if (typeof product.image === "string") {
+      formData.append("image", product.image);
+    }
+
+    try {
+      const config = {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      };
+
+      if (isEditMode) {
+        await axios.put(
+          `http://localhost:5000/api/products/${product.name}`,
+          formData,
+          config
+        );
+        message.success("Product updated successfully");
+      } else {
+        await axios.post(
+          "http://localhost:5000/api/products/addproduct",
+          formData,
+          config
+        );
+        message.success("Product added successfully");
+      }
+
+      fetchProducts();
+      resetForm();
+      setIsModalVisible(false);
+    } catch (err) {
+      console.error("Error saving product:", err.response?.data || err.message);
+      setBackendError(err.response?.data?.error || "An error occurred");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleRemove = async (name) => {
+    try {
+      await axios.delete(`http://localhost:5000/api/products/${name}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      message.success("Product removed successfully");
+      fetchProducts();
+    } catch (err) {
+      console.error(
+        "Error removing product:",
+        err.response?.data || err.message
+      );
+      message.error("Failed to remove product");
+    }
+  };
+
+  const columns = [
+    {
+      title: "Name",
+      dataIndex: "name",
+    },
+    {
+      title: "Description",
+      dataIndex: "description",
+    },
+    {
+      title: "Price ($)",
+      dataIndex: "price",
+    },
+    {
+      title: "Sizes",
+      dataIndex: "sizes",
+      render: (sizes) =>
+        sizes.map((size, idx) => (
+          <Tag key={idx} color="blue">
+            {size.size}
+          </Tag>
+        )),
+    },
+    {
+      title: "Style",
+      dataIndex: "style",
+    },
+    {
+      title: "Gender",
+      dataIndex: "gender",
+    },
+    {
+      title: "Details",
+      dataIndex: "details",
+    },
+    {
+      title: "Image",
+      dataIndex: "image",
+      render: (img) => (
+        <img
+          src={img}
+          alt="Product"
+          style={{ width: 60, height: 60, objectFit: "cover" }}
+        />
+      ),
+    },
+    {
+      title: "Actions",
+      render: (text, record) => (
+        <div className="flex space-x-2">
+          <button
+            onClick={() => showModal(record)}
+            className="bg-black text-white px-3 py-1 rounded hover:bg-gray-800"
+          >
+            Edit
+          </button>
+          <button
+            onClick={() => handleRemove(record.name)}
+            className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-700"
+          >
+            Remove
+          </button>
+        </div>
+      ),
+    },
+  ];
+
+  return (
+    <div className="p-4">
+      <h2 className="text-3xl font-semibold mb-4">Product Management</h2>
+
+      <div className="bg-white rounded shadow p-4">
+        <h2 className="text-xl font-semibold mb-4">Product Catalog</h2>
+        <Table
+          columns={columns}
+          dataSource={products.map((p, idx) => ({ ...p, key: p._id || idx }))}
+          pagination={{ pageSize: 4 }}
+        />
+        <div className="flex justify-end mt-4">
+          <button
+            onClick={() => showModal()}
+            className="px-5 py-2 bg-black text-white rounded hover:bg-gray-800"
+          >
+            Add Product
+          </button>
+        </div>
+      </div>
+
+      <Modal
+        title={isEditMode ? "Edit Product" : "Add New Product"}
+        open={isModalVisible}
+        onCancel={handleCancel}
+        footer={null}
+      >
+        {backendError && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
+            <span className="block sm:inline">{backendError}</span>
+          </div>
+        )}
+        <form onSubmit={handleSubmit} className="space-y-2 text-sm">
+          <div>
+            <label className="block font-medium">Name</label>
+            <input
+              type="text"
+              name="name"
+              value={product.name}
+              onChange={handleChange}
+              className="w-full mt-1 p-1 border rounded-sm"
+              disabled={isEditMode} // Disable name editing in edit mode
+            />
+            {errors.name && (
+              <p className="text-red-500 text-xs">{errors.name}</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block font-medium">Description</label>
+            <textarea
+              name="description"
+              value={product.description}
+              onChange={handleChange}
+              className="w-full mt-1 p-1 border rounded-sm"
+            />
+            {errors.description && (
+              <p className="text-red-500 text-xs">{errors.description}</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block font-medium">Price ($)</label>
+            <input
+              type="number"
+              name="price"
+              value={product.price}
+              onChange={handleChange}
+              className="w-full mt-1 p-1 border rounded-sm"
+            />
+            {errors.price && (
+              <p className="text-red-500 text-xs">{errors.price}</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block font-medium mb-2">Product Image</label>
+            <label className="w-full flex flex-col items-center cursor-pointer">
+              <div className="bg-black text-white px-4 py-2 rounded-full hover:bg-gray-800 transition duration-200">
+                {product.image ? "Change Image" : "Upload Image"}
+              </div>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                className="hidden"
+                disabled={isSaving}
+              />
+              {(product.preview || product.image) && (
+                <img
+                  src={product.preview || product.image}
+                  alt="Product preview"
+                  className="mt-4 w-32 h-32 object-cover rounded"
+                />
+              )}
+            </label>
+            {errors.image && (
+              <p className="text-red-500 text-xs mt-1">{errors.image}</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block font-medium">Sizes</label>
+            <div className="flex items-center gap-2 mt-1">
+              {allowedSizes.map((size) => (
+                <button
+                  key={size}
+                  type="button"
+                  onClick={() => handleSizeToggle(size)}
+                  className={`px-3 py-1 rounded-sm ${product.sizes.some((s) => s.size === size)
+                    ? "bg-blue-500 text-white"
+                    : "bg-gray-200"
+                    }`}
+                >
+                  {size}
+                </button>
+              ))}
+            </div>
+            {errors.sizes && (
+              <p className="text-red-500 text-xs">{errors.sizes}</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block font-medium">Style</label>
+            <select
+              name="style"
+              value={product.style}
+              onChange={handleChange}
+              className="w-full mt-1 p-1 border rounded-sm"
+            >
+              <option value="">Select a style</option>
+              {allowedStyles.map((style) => (
+                <option key={style} value={style}>
+                  {style}
+                </option>
+              ))}
+            </select>
+            {errors.style && (
+              <p className="text-red-500 text-xs">{errors.style}</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block font-medium">Gender</label>
+            <select
+              name="gender"
+              value={product.gender}
+              onChange={handleChange}
+              className="w-full mt-1 p-1 border rounded-sm"
+            >
+              <option value="">Select a gender</option>
+              {allowedGenders.map((gender) => (
+                <option key={gender} value={gender}>
+                  {gender}
+                </option>
+              ))}
+            </select>
+            {errors.gender && (
+              <p className="text-red-500 text-xs">{errors.gender}</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block font-medium">Details</label>
+            <textarea
+              name="details"
+              value={product.details}
+              onChange={handleChange}
+              className="w-full mt-1 p-1 border rounded-sm"
+            />
+            {errors.details && (
+              <p className="text-red-500 text-xs">{errors.details}</p>
+            )}
+          </div>
+
+          <button
+            type="submit"
+            disabled={isSaving}
+            className="w-full py-2 bg-black text-white rounded hover:bg-gray-800 disabled:opacity-50"
+          >
+            {isSaving ? "Saving..." : isEditMode ? "Update Product" : "Add Product"}
+          </button>
+        </form>
+      </Modal>
+    </div>
+  );
+};
+
+export default ProdManage;
