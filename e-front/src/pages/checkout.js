@@ -5,42 +5,55 @@ import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../context/cartcontext";
 import { useUser } from "../context/usercontext";
 import axios from "axios";
-import { loadStripe } from '@stripe/stripe-js';
-import { CardElement, Elements, useStripe, useElements } from '@stripe/react-stripe-js';
+import { loadStripe } from "@stripe/stripe-js";
+import {
+  CardElement,
+  Elements,
+  useStripe,
+  useElements,
+} from "@stripe/react-stripe-js";
 
-const stripePromise = loadStripe('pk_test_51RGWIO2Mm0DbrXihYk4y69hmAJ6eQ3BMVAjy9q7eKOdnWqugGxBzTGEfbXGHPa3dR5dQWIDfmEikaxfq7PdERdhT00kuMfYcGD');
+const stripePromise = loadStripe(
+  "pk_test_51RGWIO2Mm0DbrXihYk4y69hmAJ6eQ3BMVAjy9q7eKOdnWqugGxBzTGEfbXGHPa3dR5dQWIDfmEikaxfq7PdERdhT00kuMfYcGD"
+);
 const cardStyle = {
   style: {
     base: {
       color: "#32325d",
-      fontFamily: 'Arial, sans-serif',
+      fontFamily: "Arial, sans-serif",
       fontSmoothing: "antialiased",
       fontSize: "16px",
       "::placeholder": {
-        color: "#32325d"
-      }
+        color: "#32325d",
+      },
     },
     invalid: {
       color: "#fa755a",
-      iconColor: "#fa755a"
-    }
-  }
+      iconColor: "#fa755a",
+    },
+  },
 };
 
-
-const PaymentForm = ({ formData, total, deliveryFee, handlePaymentSuccess, validate }) => {
+//
+const PaymentForm = ({
+  formData,
+  total,
+  deliveryFee,
+  handlePaymentSuccess,
+  validate,
+}) => {
   const stripe = useStripe();
   const elements = useElements();
   const [error, setError] = useState(null);
   const [processing, setProcessing] = useState(false);
-  const { token } = useUser()
+  const { token } = useUser();
   const handleSubmit = async (event) => {
     event.preventDefault();
     setProcessing(true);
 
     if (!validate()) {
       setProcessing(false);
-      setError('Please fill in all required fields correctly');
+      setError("Please fill in all required fields correctly");
       return;
     }
     if (!stripe || !elements) {
@@ -48,7 +61,7 @@ const PaymentForm = ({ formData, total, deliveryFee, handlePaymentSuccess, valid
     }
 
     const { error, paymentMethod } = await stripe.createPaymentMethod({
-      type: 'card',
+      type: "card",
       card: elements.getElement(CardElement),
       billing_details: {
         name: formData.cardName,
@@ -63,26 +76,27 @@ const PaymentForm = ({ formData, total, deliveryFee, handlePaymentSuccess, valid
     }
 
     try {
-      const { data } = await axios.post('http://localhost:5000/api/users/payment/process', {
-        paymentMethodId: paymentMethod.id,
-        amount: total + deliveryFee,
-      },
+      const { data } = await axios.post(
+        "http://localhost:5000/api/users/payment/process",
+        {
+          paymentMethodId: paymentMethod.id,
+          amount: total + deliveryFee,
+        },
         {
           headers: {
             Authorization: `Bearer ${token}`,
-          }
+          },
         }
       );
 
-      if (data.status === 'succeeded') {
+      if (data.status === "succeeded") {
         await handlePaymentSuccess();
         console.log("Payment succeeded, calling handlePaymentSuccess");
-        setError(null)
-
+        setError(null);
       }
     } catch (err) {
-      console.error('Payment error:', err);
-      setError('Payment failed. Please try again.');
+      console.error("Payment error:", err);
+      setError("Payment failed. Please try again.");
     }
     setProcessing(false);
   };
@@ -98,12 +112,11 @@ const PaymentForm = ({ formData, total, deliveryFee, handlePaymentSuccess, valid
         disabled={processing}
         className={`w-full bg-black text-white p-2 rounded-full`}
       >
-        {processing ? 'Processing...' : 'Pay Now'}
+        {processing ? "Processing..." : "Pay Now"}
       </button>
     </form>
   );
 };
-
 
 function CheckoutPage() {
   const {
@@ -294,9 +307,6 @@ function CheckoutPage() {
     handleChange("area", value);
   };
 
-
-
-
   return (
     <div>
       <Navbar />
@@ -443,8 +453,11 @@ function CheckoutPage() {
               <div className="flex gap-3 mb-4">
                 <button
                   onClick={() => handleChange("method", "mastercard")}
-                  className={`border p-2 rounded-md ${formData.method === "mastercard" ? "ring-2 ring-purple-500" : ""
-                    }`}
+                  className={`border p-2 rounded-md ${
+                    formData.method === "mastercard"
+                      ? "ring-2 ring-purple-500"
+                      : ""
+                  }`}
                 >
                   <img
                     src="https://img.icons8.com/color/48/mastercard-logo.png"
@@ -454,8 +467,9 @@ function CheckoutPage() {
                 </button>
                 <button
                   onClick={() => handleChange("method", "visa")}
-                  className={`border p-2 rounded-md ${formData.method === "visa" ? "ring-2 ring-purple-500" : ""
-                    }`}
+                  className={`border p-2 rounded-md ${
+                    formData.method === "visa" ? "ring-2 ring-purple-500" : ""
+                  }`}
                 >
                   <img
                     src="https://img.icons8.com/color/48/000000/visa.png"
@@ -465,8 +479,9 @@ function CheckoutPage() {
                 </button>
                 <button
                   onClick={() => handleChange("method", "cod")}
-                  className={`border p-2 rounded-md ${formData.method === "cod" ? "ring-2 ring-purple-500" : ""
-                    }`}
+                  className={`border p-2 rounded-md ${
+                    formData.method === "cod" ? "ring-2 ring-purple-500" : ""
+                  }`}
                 >
                   COD
                 </button>
@@ -476,7 +491,8 @@ function CheckoutPage() {
               )}
 
               {/* Stripe Card Element */}
-              {(formData.method === "mastercard" || formData.method === "visa") && (
+              {(formData.method === "mastercard" ||
+                formData.method === "visa") && (
                 <div className="space-y-4">
                   <div>
                     <label className="block mb-1 text-sm font-medium text-gray-700">
