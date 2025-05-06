@@ -27,6 +27,9 @@ const Product = () => {
     user: "",
     comment: "",
   });
+  // Add state for review pagination
+  const [currentReviewPage, setCurrentReviewPage] = useState(1);
+  const reviewsPerPage = 4;
 
   const { addToCart } = useCart();
   const { isLoggedIn, token } = useUser();
@@ -71,8 +74,8 @@ const Product = () => {
     const sizeEntry = productData.sizes.find((entry) => entry.size === size);
     setAvailableStock(sizeEntry ? sizeEntry.stock : 0);
     setQuantity(1); // Reset quantity to 1 when a new size is selected
-    const label = document.getElementById("sizeNotChosen")
-    label.hidden = true
+    const label = document.getElementById("sizeNotChosen");
+    label.hidden = true;
   };
 
   const handleAddToCart = () => {
@@ -82,8 +85,8 @@ const Product = () => {
     }
 
     if (!selectedSize) {
-      const label = document.getElementById("sizeNotChosen")
-      label.hidden = false
+      const label = document.getElementById("sizeNotChosen");
+      label.hidden = false;
       return;
     }
 
@@ -137,6 +140,17 @@ const Product = () => {
   const isLowStock = totalStock < lowStockThreshold && totalStock > 0;
   const isSoldOut = totalStock === 0;
 
+  // Calculate pagination for reviews
+  const indexOfLastReview = currentReviewPage * reviewsPerPage;
+  const indexOfFirstReview = indexOfLastReview - reviewsPerPage;
+  const currentReviews = productData.reviews.slice(
+    indexOfFirstReview,
+    indexOfLastReview
+  );
+  const totalReviewPages = Math.ceil(
+    productData.reviews.length / reviewsPerPage
+  );
+
   const handleReviewSubmit = async (e) => {
     e.preventDefault();
     let errors = { user: "", comment: "" };
@@ -164,10 +178,14 @@ const Product = () => {
         }
       );
 
-      setProductData(prevData => ({
+      setProductData((prevData) => ({
         ...prevData,
-        reviews: response.data.reviews || prevData.reviews
-      }));  
+        reviews: response.data.reviews || prevData.reviews,
+      }));
+      // Go to the last page to show the new review
+      setCurrentReviewPage(
+        Math.ceil((productData.reviews.length + 1) / reviewsPerPage)
+      );
       setShowReviewForm(false);
       setReviewInput({
         user: "",
@@ -296,7 +314,13 @@ const Product = () => {
               Add to Cart
             </button>
             <br></br>
-            <label hidden="true" id="sizeNotChosen" className="mt-1 text-sm text-red-600 font-medium">Please specify a size</label>
+            <label
+              hidden="true"
+              id="sizeNotChosen"
+              className="mt-1 text-sm text-red-600 font-medium"
+            >
+              Please specify a size
+            </label>
           </div>
 
           <div className="mt-8">
@@ -322,7 +346,8 @@ const Product = () => {
               )}
               {activeTab === "reviews" && (
                 <div className="space-y-4">
-                  {productData.reviews.map((review, i) => (
+                  {/* Display only the current page of reviews */}
+                  {currentReviews.map((review, i) => (
                     <div key={i} className="border-b pb-2">
                       <p className="font-semibold">{review.user}</p>
                       <div className="flex text-yellow-500 text-sm">
@@ -333,6 +358,47 @@ const Product = () => {
                       <p>{review.comment}</p>
                     </div>
                   ))}
+
+                  {/* Review pagination controls */}
+                  {productData.reviews.length > reviewsPerPage && (
+                    <div className="flex justify-center mt-6 space-x-2">
+                      <button
+                        onClick={() =>
+                          setCurrentReviewPage((prev) => Math.max(prev - 1, 1))
+                        }
+                        disabled={currentReviewPage === 1}
+                        className="px-3 py-1 rounded border bg-white disabled:opacity-50"
+                      >
+                        ←
+                      </button>
+
+                      {[...Array(totalReviewPages)].map((_, index) => (
+                        <button
+                          key={index + 1}
+                          onClick={() => setCurrentReviewPage(index + 1)}
+                          className={`px-3 py-1 rounded border ${
+                            currentReviewPage === index + 1
+                              ? "bg-black text-white"
+                              : "bg-white"
+                          }`}
+                        >
+                          {index + 1}
+                        </button>
+                      ))}
+
+                      <button
+                        onClick={() =>
+                          setCurrentReviewPage((prev) =>
+                            Math.min(prev + 1, totalReviewPages)
+                          )
+                        }
+                        disabled={currentReviewPage === totalReviewPages}
+                        className="px-3 py-1 rounded border bg-white disabled:opacity-50"
+                      >
+                        →
+                      </button>
+                    </div>
+                  )}
 
                   <div className="flex justify-end">
                     <button
