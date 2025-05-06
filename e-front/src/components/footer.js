@@ -83,7 +83,7 @@ const Footer = () => {
       </div>
 
       <p className="text-center mt-6 text-xs text-gray-400">
-        Shop.co © 2025. All rights reserved.
+        VibeWear © 2025. All rights reserved.
       </p>
     </footer>
   );

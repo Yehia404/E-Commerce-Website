@@ -97,7 +97,9 @@ const Home = () => {
       <ToastContainer />
       <div className="bg-black text-white text-sm text-center py-2">
         Sign up now to get 20% off your first order!{" "}
-        <span className="underline cursor-pointer">Sign Up Now</span>
+        <Link to="/register" className="underline cursor-pointer">
+          Sign Up Now
+        </Link>
       </div>
 
       <Navbar />
