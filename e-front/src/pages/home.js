@@ -3,8 +3,9 @@ import { FaStar } from "react-icons/fa";
 import Hero from "../assets/hero.jpg";
 import Navbar from "../components/navbar";
 import Footer from "../components/footer";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
+import { useUser } from "../context/usercontext";
 import axios from "axios";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -14,8 +15,25 @@ const Home = () => {
   const [topReviews, setTopReviews] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const navigate = useNavigate();
+  const location = useLocation();
+  const { isLoggedIn } = useUser();
 
   useEffect(() => {
+    // Check if we have a successful order state and show toast
+    if (location.state?.showToast) {
+      toast.success("Your order has been placed successfully!", {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
+
+      // Clear the state after showing the toast
+      window.history.replaceState({}, document.title);
+    }
+
     const fetchNewArrivals = async () => {
       try {
         const response = await axios.get(
@@ -48,7 +66,7 @@ const Home = () => {
 
     fetchNewArrivals();
     fetchCollection();
-  }, []);
+  }, [location.state]);
 
   useEffect(() => {
     const aggregateReviews = () => {
@@ -95,12 +113,14 @@ const Home = () => {
   return (
     <div className="font-sans">
       <ToastContainer />
-      <div className="bg-black text-white text-sm text-center py-2">
-        Sign up now to get 20% off your first order!{" "}
-        <Link to="/register" className="underline cursor-pointer">
-          Sign Up Now
-        </Link>
-      </div>
+      {!isLoggedIn && (
+        <div className="bg-black text-white text-sm text-center py-2">
+          Sign up now to get 20% off your first order!{" "}
+          <Link to="/register" className="underline cursor-pointer">
+            Sign Up Now
+          </Link>
+        </div>
+      )}
 
       <Navbar />
 
