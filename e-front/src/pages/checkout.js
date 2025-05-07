@@ -5,6 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../context/cartcontext";
 import { useUser } from "../context/usercontext";
 import axios from "axios";
+import { BsCreditCard } from "react-icons/bs";
 import { loadStripe } from "@stripe/stripe-js";
 import {
   CardElement,
@@ -96,7 +97,8 @@ const PaymentForm = ({
       }
     } catch (err) {
       console.error("Payment error:", err);
-      setError("Payment failed. Please try again.");
+      // setError("Payment failed. Please try again.");
+      setError(err.response.data.error || "Payment failed. Please try again.");
     }
     setProcessing(false);
   };
@@ -154,6 +156,9 @@ function CheckoutPage() {
     { name: "Cairo", fee: 20 },
     { name: "Giza", fee: 30 },
     { name: "Qalyubia", fee: 40 },
+    { name: "Alexandria", fee: 100 },
+    { name: "Suez", fee: 60 },
+    { name: "Ismailia", fee: 40 },
   ];
 
   useEffect(() => {
@@ -234,7 +239,7 @@ function CheckoutPage() {
     if (!/^\d{11}$/.test(formData.phoneNumber))
       errs.phoneNumber = "Must be 11 digits";
     if (!formData.email.trim()) errs.email = "Required";
-    if (formData.method === "mastercard" || formData.method === "visa") {
+    if (formData.method === "card") {
       if (!formData.cardName.trim()) errs.cardName = "Required";
     }
     if (!formData.area) errs.area = "Select an area";
@@ -247,7 +252,7 @@ function CheckoutPage() {
   const handleConfirm = async () => {
     if (validate()) {
       let paymentMethod;
-      if (formData.method === "mastercard" || formData.method === "visa") {
+      if (formData.method === "card") {
         paymentMethod = "Credit Card";
       } else if (formData.method === "cod") {
         paymentMethod = "COD";
@@ -452,30 +457,15 @@ function CheckoutPage() {
               </h2>
               <div className="flex gap-3 mb-4">
                 <button
-                  onClick={() => handleChange("method", "mastercard")}
+                  onClick={() => handleChange("method", "card")}
                   className={`border p-2 rounded-md ${
-                    formData.method === "mastercard"
-                      ? "ring-2 ring-purple-500"
-                      : ""
+                    formData.method === "card" ? "ring-2 ring-purple-500" : ""
                   }`}
                 >
-                  <img
-                    src="https://img.icons8.com/color/48/mastercard-logo.png"
-                    alt="Mastercard"
-                    className="w-8 h-8"
-                  />
-                </button>
-                <button
-                  onClick={() => handleChange("method", "visa")}
-                  className={`border p-2 rounded-md ${
-                    formData.method === "visa" ? "ring-2 ring-purple-500" : ""
-                  }`}
-                >
-                  <img
-                    src="https://img.icons8.com/color/48/000000/visa.png"
-                    alt="Visa"
-                    className="w-8 h-8"
-                  />
+                  <div className="flex items-center">
+                    <BsCreditCard className="w-6 h-6" />
+                    {/* <span className="ml-2">Card</span> */}
+                  </div>
                 </button>
                 <button
                   onClick={() => handleChange("method", "cod")}
@@ -491,8 +481,7 @@ function CheckoutPage() {
               )}
 
               {/* Stripe Card Element */}
-              {(formData.method === "mastercard" ||
-                formData.method === "visa") && (
+              {formData.method === "card" && (
                 <div className="space-y-4">
                   <div>
                     <label className="block mb-1 text-sm font-medium text-gray-700">

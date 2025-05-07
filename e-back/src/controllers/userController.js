@@ -3,9 +3,10 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const Order = require("../models/Order");
 const Product = require("../models/Product");
-const stripe = require('../utils/stripe');
-const transporter = require('../utils/node_mailer');
-const { createOrderConfirmationEmail } = require('../utils/emailTemplate');
+const cloudinary = require("cloudinary").v2;
+const stripe = require("../utils/stripe");
+const transporter = require("../utils/node_mailer");
+const { createOrderConfirmationEmail } = require("../utils/emailTemplate");
 // Register User
 const registerUser = async (req, res) => {
   const { firstname, lastname, email, phone, password } = req.body;
@@ -96,10 +97,10 @@ const processPayment = async (req, res) => {
     // Create payment intent
     const paymentIntent = await stripe.paymentIntents.create({
       amount: amount * 100, // Stripe expects amount in cents
-      currency: 'usd',
+      currency: "usd",
       payment_method: paymentMethodId,
       confirm: true,
-      return_url: 'http://localhost:3000/order-confirmation',
+      return_url: "http://localhost:3000/order-confirmation",
     });
 
     return res.status(200).json({
@@ -107,7 +108,7 @@ const processPayment = async (req, res) => {
       status: paymentIntent.status,
     });
   } catch (error) {
-    console.error('Payment error:', error);
+    console.error("Payment error:", error);
     return res.status(400).json({ error: error.message });
   }
 };
@@ -195,8 +196,8 @@ const createOrder = async (req, res) => {
     const mailOptions = {
       from: process.env.EMAIL_USER,
       to: email,
-      subject: 'Order Confirmation',
-      html: createOrderConfirmationEmail(order)
+      subject: "Order Confirmation",
+      html: createOrderConfirmationEmail(order),
     };
     await transporter.sendMail(mailOptions);
     res.status(201).json({
@@ -248,7 +249,7 @@ const getUserOrders = async (req, res) => {
   const userId = req.user.userId; // Extract userId from token
 
   try {
-    const orders = await Order.find({"userId": userId})
+    const orders = await Order.find({ userId: userId });
     // Return the user's orders
     res.status(200).json(orders);
   } catch (error) {
@@ -259,8 +260,8 @@ const getUserOrders = async (req, res) => {
 
 // Update User Profile
 const updateUserProfile = async (req, res) => {
-  const userId = req.user.userId; // Extract userId from token
-  const { firstname, lastname, phone, image } = req.body;
+  const userId = req.user.userId;
+  const { firstname, lastname, phone, removeImage } = req.body;
 
   try {
     // Find the user by ID
@@ -269,16 +270,39 @@ const updateUserProfile = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
+    // Store old image for deletion
+    const oldImage = user.image;
+
     // Update user details
     user.firstname = firstname || user.firstname;
     user.lastname = lastname || user.lastname;
     user.phone = phone || user.phone;
-    user.image = image || user.image;
 
-    // If a file was uploaded, Cloudinary URL is in req.file.path
-    if (req.file && req.file.path) {
-      user.image = req.file.path;                       
+    // Handle image updates/removal
+    if (removeImage === "true") {
+      // Remove image
+      user.image = null;
+
+      // Delete old image from Cloudinary if it exists
+      if (oldImage && oldImage.includes("cloudinary.com")) {
+        const publicId = oldImage.split("/").pop().split(".")[0];
+        await cloudinary.uploader.destroy(publicId);
+      }
+    } else if (req.file && req.file.path) {
+      // Update to new image
+      user.image = req.file.path;
+
+      // Delete old image from Cloudinary if it exists
+      if (
+        oldImage &&
+        oldImage !== req.file.path &&
+        oldImage.includes("cloudinary.com")
+      ) {
+        const publicId = oldImage.split("/").pop().split(".")[0];
+        await cloudinary.uploader.destroy(publicId);
+      }
     }
+
     // Save the updated user
     await user.save();
 
