@@ -2,12 +2,13 @@ import React, { useState } from "react";
 import { FaUser, FaShoppingCart, FaSearch } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
 import { Drawer, Button, Input, Dropdown, Menu } from "antd";
-import { MenuOutlined } from "@ant-design/icons";
+import { MenuOutlined, DownOutlined } from "@ant-design/icons";
 import { useUser } from "../context/usercontext";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [userDropdownVisible, setUserDropdownVisible] = useState(false);
   const navigate = useNavigate();
 
   const { isLoggedIn, isAdmin, logout } = useUser();
@@ -22,7 +23,12 @@ const Navbar = () => {
 
   const handleIconClick = () => {
     if (isLoggedIn) {
-      navigate("/profile");
+      // On mobile: toggle dropdown instead of navigation
+      if (window.innerWidth < 1024) {
+        setUserDropdownVisible(!userDropdownVisible);
+      } else {
+        navigate("/profile");
+      }
     } else {
       navigate("/login");
     }
@@ -31,6 +37,7 @@ const Navbar = () => {
   const handleLogout = () => {
     logout();
     navigate("/login");
+    setUserDropdownVisible(false);
   };
 
   const handleSearchChange = (e) => {
@@ -43,6 +50,40 @@ const Navbar = () => {
     }
   };
 
+  const handleMenuClick = (path) => {
+    navigate(path);
+    setUserDropdownVisible(false);
+  };
+
+  // Mobile dropdown that appears below the user icon
+  const MobileUserDropdown = () => {
+    if (!isLoggedIn || !userDropdownVisible) return null;
+
+    return (
+      <div className="absolute right-16 top-16 bg-white shadow-lg rounded-md py-2 z-20 w-32 lg:hidden">
+        <div
+          className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+          onClick={() => handleMenuClick("/profile")}
+        >
+          Profile
+        </div>
+        <div
+          className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+          onClick={() => handleMenuClick("/order")}
+        >
+          Orders
+        </div>
+        <div
+          className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-red-500"
+          onClick={handleLogout}
+        >
+          Logout
+        </div>
+      </div>
+    );
+  };
+
+  // Standard dropdown for desktop view
   const dropdownMenu = (
     <Menu>
       <Menu.Item key="profile" onClick={() => navigate("/profile")}>
@@ -52,7 +93,7 @@ const Navbar = () => {
         Orders
       </Menu.Item>
       <Menu.Item key="logout" onClick={handleLogout}>
-        Logout
+        <span className="text-red-500">Logout</span>
       </Menu.Item>
     </Menu>
   );
@@ -96,17 +137,30 @@ const Navbar = () => {
             </Link>
           )}
 
-          <Dropdown
-            overlay={dropdownMenu}
-            trigger={isLoggedIn ? ["hover"] : []}
-          >
+          {/* Desktop: Use Ant Design Dropdown */}
+          <div className="hidden lg:block">
+            <Dropdown
+              overlay={dropdownMenu}
+              trigger={isLoggedIn ? ["hover"] : []}
+            >
+              <div
+                onClick={handleIconClick}
+                className="text-xl cursor-pointer flex items-center"
+              >
+                <FaUser />
+              </div>
+            </Dropdown>
+          </div>
+
+          {/* Mobile: Use custom dropdown with absolute positioning */}
+          <div className="lg:hidden">
             <div
               onClick={handleIconClick}
-              className="text-xl cursor-pointer flex items-center"
+              className="text-xl cursor-pointer flex items-center relative"
             >
               <FaUser />
             </div>
-          </Dropdown>
+          </div>
 
           <Link to="/cart" className="text-xl">
             <FaShoppingCart />
@@ -114,37 +168,40 @@ const Navbar = () => {
         </div>
       </nav>
 
+      {/* Mobile user dropdown */}
+      <MobileUserDropdown />
+
       <Drawer
         placement="left"
         closable={false}
         onClose={closeMenu}
-        visible={isOpen}
+        open={isOpen} // Change "visible" to "open" for newer Ant Design versions
         width={250}
       >
         <ul className="flex flex-col gap-6 text-lg">
-          <Link to="/home">
+          <Link to="/home" onClick={closeMenu}>
             <li className="cursor-pointer hover:bg-gray-300 p-2 rounded">
               Home
             </li>
           </Link>
-          <Link to="/shop">
+          <Link to="/shop" onClick={closeMenu}>
             <li className="cursor-pointer hover:bg-gray-300 p-2 rounded">
               Shop All
             </li>
           </Link>
-          <Link to="/shop?gender=Men">
+          <Link to="/shop?gender=Men" onClick={closeMenu}>
             <li className="cursor-pointer hover:bg-gray-300 p-2 rounded">
               Men
             </li>
           </Link>
-          <Link to="/shop?gender=Women">
+          <Link to="/shop?gender=Women" onClick={closeMenu}>
             <li className="cursor-pointer hover:bg-gray-300 p-2 rounded">
               Women
             </li>
           </Link>
 
           {isAdmin && (
-            <Link to="/admin">
+            <Link to="/admin" onClick={closeMenu}>
               <li className="cursor-pointer hover:bg-gray-300 hover:text-black p-2 rounded font-semibold bg-black text-white">
                 Admin Panel
               </li>
