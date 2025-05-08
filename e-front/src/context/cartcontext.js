@@ -1,5 +1,4 @@
 import React, { createContext, useState, useContext, useEffect } from "react";
-import { useUser } from "./usercontext";
 
 const CartContext = createContext();
 
@@ -12,7 +11,7 @@ export const CartProvider = ({ children }) => {
     const savedCart = localStorage.getItem("cart");
     return savedCart ? JSON.parse(savedCart) : [];
   });
-  const { token } = useUser();
+
   const [discountPercentage, setDiscountPercentage] = useState(0);
 
   const [subtotal, setSubtotal] = useState(() => {
@@ -85,6 +84,10 @@ export const CartProvider = ({ children }) => {
   };
 
   const applyPromoCode = async (code) => {
+    const tokenData = localStorage.getItem("authToken");
+    const tokenObject = JSON.parse(tokenData);
+    const token = tokenObject.token;
+
     code = code.toUpperCase();
     if (!token) {
       console.error("Token is missing");

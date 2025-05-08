@@ -7,6 +7,7 @@ import React, {
 } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { useCart } from "./cartcontext";
 
 const UserContext = createContext();
 
@@ -16,6 +17,7 @@ export const UserProvider = ({ children }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate();
+  const { setCart, setSubtotal, setDiscount, setTotal } = useCart();
 
   const logout = useCallback(() => {
     setIsLoggedIn(false);
@@ -24,6 +26,16 @@ export const UserProvider = ({ children }) => {
     setToken(null);
     localStorage.removeItem("authToken");
     localStorage.removeItem("user");
+
+    setCart([]);
+    setSubtotal(0);
+    setDiscount(0);
+    setTotal(0);
+    localStorage.removeItem("cart");
+    localStorage.removeItem("subtotal");
+    localStorage.removeItem("discount");
+    localStorage.removeItem("total");
+
     navigate("/login");
   }, [navigate]);
 

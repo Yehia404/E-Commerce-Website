@@ -21,8 +21,8 @@ import Order from "./pages/order";
 function App() {
   return (
     <Router>
-      <UserProvider>
-        <CartProvider>
+      <CartProvider>
+        <UserProvider>
           <Routes>
             <Route path="/" element={<Navigate to="/home" />} />
             <Route path="/home" element={<Home />} />
@@ -36,8 +36,8 @@ function App() {
             <Route path="/profile" element={<Profile />} />
             <Route path="/order" element={<Order />} />
           </Routes>
-        </CartProvider>
-      </UserProvider>
+        </UserProvider>
+      </CartProvider>
     </Router>
   );
 }
