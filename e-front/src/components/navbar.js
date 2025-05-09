@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { FaUser, FaShoppingCart, FaSearch } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
 import { Drawer, Button, Input, Dropdown, Menu } from "antd";
@@ -9,9 +9,25 @@ const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [userDropdownVisible, setUserDropdownVisible] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
   const navigate = useNavigate();
 
   const { isLoggedIn, isAdmin, logout } = useUser();
+
+  // Track window size for responsive behavior
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 1024);
+
+      // Auto-close the user dropdown when switching to desktop
+      if (window.innerWidth >= 1024) {
+        setUserDropdownVisible(false);
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const toggleMenu = () => {
     setIsOpen(!isOpen);
@@ -24,7 +40,7 @@ const Navbar = () => {
   const handleIconClick = () => {
     if (isLoggedIn) {
       // On mobile: toggle dropdown instead of navigation
-      if (window.innerWidth < 1024) {
+      if (isMobile) {
         setUserDropdownVisible(!userDropdownVisible);
       } else {
         navigate("/profile");
@@ -47,6 +63,7 @@ const Navbar = () => {
   const handleSearchSubmit = (e) => {
     if (e.key === "Enter") {
       navigate(`/shop?search=${searchQuery}`);
+      closeMenu(); // Close the menu if open
     }
   };
 
@@ -175,7 +192,7 @@ const Navbar = () => {
         placement="left"
         closable={false}
         onClose={closeMenu}
-        open={isOpen} // Change "visible" to "open" for newer Ant Design versions
+        open={isOpen}
         width={250}
       >
         <ul className="flex flex-col gap-6 text-lg">
@@ -200,7 +217,8 @@ const Navbar = () => {
             </li>
           </Link>
 
-          {isAdmin && (
+          {/* Admin Panel button only on mobile (using the state instead of media query) */}
+          {isAdmin && isMobile && (
             <Link to="/admin" onClick={closeMenu}>
               <li className="cursor-pointer hover:bg-gray-300 hover:text-black p-2 rounded font-semibold bg-black text-white">
                 Admin Panel
