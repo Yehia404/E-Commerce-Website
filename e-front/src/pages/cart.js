@@ -15,6 +15,7 @@ const Cart = () => {
     total,
     discountPercentage,
     applyPromoCode,
+    getCartItemKey,
   } = useCart();
   const [currentPage, setCurrentPage] = useState(1);
   const [promoCode, setPromoCode] = useState("");
@@ -42,6 +43,16 @@ const Cart = () => {
     cart.length > 0 ? cart.slice(indexOfFirstItem, indexOfLastItem) : [];
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
+  // Handle quantity updates with size
+  const handleUpdateQuantity = (item, delta) => {
+    updateQuantity(item.id, item.size, delta);
+  };
+
+  // Handle remove with size
+  const handleRemoveItem = (item) => {
+    removeItem(item.id, item.size);
+  };
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -74,7 +85,7 @@ const Cart = () => {
             <div className="flex-1 space-y-4 sm:space-y-6">
               {currentItems.map((item) => (
                 <div
-                  key={item.id}
+                  key={getCartItemKey(item.id, item.size)}
                   className="flex flex-wrap sm:flex-nowrap items-center bg-white rounded-2xl shadow p-4 text-sm font-semibold text-gray-900 w-full"
                 >
                   <img
@@ -103,14 +114,14 @@ const Cart = () => {
                   <div className="flex items-center mt-3 sm:mt-0 sm:ml-4">
                     <button
                       className="px-2 py-1 bg-gray-200 rounded-l hover:bg-gray-300"
-                      onClick={() => updateQuantity(item.id, -1)}
+                      onClick={() => handleUpdateQuantity(item, -1)}
                     >
                       -
                     </button>
                     <span className="px-3">{item.quantity}</span>
                     <button
                       className="px-2 py-1 bg-gray-200 rounded-r hover:bg-gray-300"
-                      onClick={() => updateQuantity(item.id, 1)}
+                      onClick={() => handleUpdateQuantity(item, 1)}
                       disabled={item.quantity === 5}
                     >
                       +
@@ -118,7 +129,7 @@ const Cart = () => {
                   </div>
                   <button
                     className="text-red-500 ml-4 hover:text-red-700 mt-3 sm:mt-0"
-                    onClick={() => removeItem(item.id)}
+                    onClick={() => handleRemoveItem(item)}
                   >
                     <FiTrash2 size={18} />
                   </button>
