@@ -6,18 +6,14 @@ import {
   Tag,
   Modal,
   List,
-  Space,
   Spin,
   Typography,
   Button,
   Dropdown,
   Card,
   Pagination,
-  Divider,
 } from "antd";
 import {
-  DownOutlined,
-  FilterOutlined,
   EyeOutlined,
   SyncOutlined,
   MenuOutlined,

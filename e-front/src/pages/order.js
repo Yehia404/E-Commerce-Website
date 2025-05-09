@@ -254,7 +254,7 @@ const Order = () => {
                   columns={getColumns()}
                   rowKey="orderId"
                   pagination={{
-                    pageSize: 5,
+                    pageSize: 7,
                     hideOnSinglePage: true,
                     position: ["bottomCenter"],
                   }}

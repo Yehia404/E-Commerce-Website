@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { FaUser, FaShoppingCart, FaSearch } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
 import { Drawer, Button, Input, Dropdown, Menu } from "antd";
@@ -9,28 +9,14 @@ const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [userDropdownVisible, setUserDropdownVisible] = useState(false);
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
   const navigate = useNavigate();
 
   const { isLoggedIn, isAdmin, logout } = useUser();
 
-  // Track window size for responsive behavior
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 1024);
-
-      // Auto-close the user dropdown when switching to desktop
-      if (window.innerWidth >= 1024) {
-        setUserDropdownVisible(false);
-      }
-    };
-
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
   const toggleMenu = () => {
     setIsOpen(!isOpen);
+    // Close user dropdown when opening menu drawer
+    setUserDropdownVisible(false);
   };
 
   const closeMenu = () => {
@@ -40,7 +26,7 @@ const Navbar = () => {
   const handleIconClick = () => {
     if (isLoggedIn) {
       // On mobile: toggle dropdown instead of navigation
-      if (isMobile) {
+      if (window.innerWidth < 1024) {
         setUserDropdownVisible(!userDropdownVisible);
       } else {
         navigate("/profile");
@@ -48,6 +34,17 @@ const Navbar = () => {
     } else {
       navigate("/login");
     }
+  };
+
+  // Direct navigation functions without event parameters
+  const goToProfile = () => {
+    navigate("/profile");
+    setUserDropdownVisible(false);
+  };
+
+  const goToOrders = () => {
+    navigate("/order");
+    setUserDropdownVisible(false);
   };
 
   const handleLogout = () => {
@@ -63,42 +60,32 @@ const Navbar = () => {
   const handleSearchSubmit = (e) => {
     if (e.key === "Enter") {
       navigate(`/shop?search=${searchQuery}`);
-      closeMenu(); // Close the menu if open
+      closeMenu();
     }
   };
 
-  const handleMenuClick = (path) => {
-    navigate(path);
-    setUserDropdownVisible(false);
-  };
+  // Close dropdown when clicking anywhere on document
+  useEffect(() => {
+    const handleDocumentClick = () => {
+      if (userDropdownVisible) {
+        setUserDropdownVisible(false);
+      }
+    };
 
-  // Mobile dropdown that appears below the user icon
-  const MobileUserDropdown = () => {
-    if (!isLoggedIn || !userDropdownVisible) return null;
+    // Use setTimeout to allow the current click event to finish
+    // before adding the document click listener
+    let timeoutId;
+    if (userDropdownVisible) {
+      timeoutId = setTimeout(() => {
+        document.addEventListener("click", handleDocumentClick);
+      }, 0);
+    }
 
-    return (
-      <div className="absolute right-16 top-16 bg-white shadow-lg rounded-md py-2 z-20 w-32 lg:hidden">
-        <div
-          className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-          onClick={() => handleMenuClick("/profile")}
-        >
-          Profile
-        </div>
-        <div
-          className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-          onClick={() => handleMenuClick("/order")}
-        >
-          Orders
-        </div>
-        <div
-          className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-red-500"
-          onClick={handleLogout}
-        >
-          Logout
-        </div>
-      </div>
-    );
-  };
+    return () => {
+      clearTimeout(timeoutId);
+      document.removeEventListener("click", handleDocumentClick);
+    };
+  }, [userDropdownVisible]);
 
   // Standard dropdown for desktop view
   const dropdownMenu = (
@@ -169,10 +156,13 @@ const Navbar = () => {
             </Dropdown>
           </div>
 
-          {/* Mobile: Use custom dropdown with absolute positioning */}
+          {/* Mobile: User icon */}
           <div className="lg:hidden">
             <div
-              onClick={handleIconClick}
+              onClick={(e) => {
+                e.stopPropagation(); // Stop event from bubbling
+                handleIconClick();
+              }}
               className="text-xl cursor-pointer flex items-center relative"
             >
               <FaUser />
@@ -185,8 +175,38 @@ const Navbar = () => {
         </div>
       </nav>
 
-      {/* Mobile user dropdown */}
-      <MobileUserDropdown />
+      {/* Mobile user dropdown - completely separate from other components */}
+      {isLoggedIn && userDropdownVisible && (
+        <div
+          className="fixed top-16 right-16 bg-white shadow-lg rounded-md py-2 w-32 z-50"
+          onClick={(e) => e.stopPropagation()} // Prevent clicks from bubbling up
+        >
+          <Link to="/profile" className="block">
+            <div
+              className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+              onClick={goToProfile}
+            >
+              Profile
+            </div>
+          </Link>
+
+          <Link to="/order" className="block">
+            <div
+              className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+              onClick={goToOrders}
+            >
+              Orders
+            </div>
+          </Link>
+
+          <div
+            className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-red-500"
+            onClick={handleLogout}
+          >
+            Logout
+          </div>
+        </div>
+      )}
 
       <Drawer
         placement="left"
@@ -217,8 +237,7 @@ const Navbar = () => {
             </li>
           </Link>
 
-          {/* Admin Panel button only on mobile (using the state instead of media query) */}
-          {isAdmin && isMobile && (
+          {isAdmin && (
             <Link to="/admin" onClick={closeMenu}>
               <li className="cursor-pointer hover:bg-gray-300 hover:text-black p-2 rounded font-semibold bg-black text-white">
                 Admin Panel

@@ -17,7 +17,6 @@ import {
   DeleteOutlined,
   PlusOutlined,
   SearchOutlined,
-  FilterOutlined,
 } from "@ant-design/icons";
 
 const ProdManage = () => {
@@ -508,7 +507,7 @@ const ProdManage = () => {
                 key: p._id || idx,
               }))}
               pagination={{
-                pageSize: windowWidth < 768 ? 8 : 6,
+                pageSize: windowWidth < 768 ? 8 : 5,
                 simple: windowWidth < 768,
                 position: ["bottomCenter"],
               }}

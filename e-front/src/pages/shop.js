@@ -17,7 +17,7 @@ const Shop = () => {
   const [error, setError] = useState(null);
   const [sortOrder, setSortOrder] = useState("lowToHigh");
   const [search, setSearch] = useState("");
-  const productsPerPage = 4;
+  const productsPerPage = 6;
   const navigate = useNavigate();
   const location = useLocation();
 
