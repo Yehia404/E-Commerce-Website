@@ -1,5 +1,4 @@
 import React, { createContext, useState, useContext, useEffect } from "react";
-import { useUser } from "./usercontext";
 
 const CartContext = createContext();
 
@@ -12,7 +11,7 @@ export const CartProvider = ({ children }) => {
     const savedCart = localStorage.getItem("cart");
     return savedCart ? JSON.parse(savedCart) : [];
   });
-  const { token } = useUser();
+
   const [discountPercentage, setDiscountPercentage] = useState(0);
 
   const [subtotal, setSubtotal] = useState(() => {
@@ -49,28 +48,46 @@ export const CartProvider = ({ children }) => {
     localStorage.setItem("total", newTotal.toFixed(2));
   }, [cart, discountPercentage]);
 
+  // Create a unique cart item ID by combining product ID and size
+  const getCartItemKey = (id, size) => {
+    return `${id}-${size}`;
+  };
+
   const addToCart = (product) => {
     setCart((prevCart) => {
-      const existingProduct = prevCart.find((item) => item.id === product.id);
-      if (existingProduct) {
-        return prevCart.map((item) =>
-          item.id === product.id
-            ? {
-                ...item,
-                quantity: Math.min(5, item.quantity + product.quantity),
-              }
-            : item
-        );
+      // Check if the same product with the same size already exists
+      const existingItemIndex = prevCart.findIndex(
+        (item) => item.id === product.id && item.size === product.size
+      );
+
+      if (existingItemIndex >= 0) {
+        // If the same product with the same size exists, update its quantity
+        const updatedCart = [...prevCart];
+        const existingItem = updatedCart[existingItemIndex];
+
+        updatedCart[existingItemIndex] = {
+          ...existingItem,
+          quantity: Math.min(5, existingItem.quantity + product.quantity),
+        };
+
+        return updatedCart;
       } else {
-        return [...prevCart, product];
+        // If it's a new product or a new size, add it as a new item
+        return [
+          ...prevCart,
+          {
+            ...product,
+            cartItemKey: getCartItemKey(product.id, product.size), // Add unique key
+          },
+        ];
       }
     });
   };
 
-  const updateQuantity = (id, delta) => {
+  const updateQuantity = (id, size, delta) => {
     setCart((prevCart) =>
       prevCart.map((item) =>
-        item.id === id
+        item.id === id && item.size === size
           ? {
               ...item,
               quantity: Math.max(1, Math.min(5, item.quantity + delta)),
@@ -80,11 +97,17 @@ export const CartProvider = ({ children }) => {
     );
   };
 
-  const removeItem = (id) => {
-    setCart((prevCart) => prevCart.filter((item) => item.id !== id));
+  const removeItem = (id, size) => {
+    setCart((prevCart) =>
+      prevCart.filter((item) => !(item.id === id && item.size === size))
+    );
   };
 
   const applyPromoCode = async (code) => {
+    const tokenData = localStorage.getItem("authToken");
+    const tokenObject = JSON.parse(tokenData);
+    const token = tokenObject.token;
+
     code = code.toUpperCase();
     if (!token) {
       console.error("Token is missing");
@@ -136,6 +159,7 @@ export const CartProvider = ({ children }) => {
         discountPercentage,
         setDiscountPercentage,
         applyPromoCode,
+        getCartItemKey, // Export the helper function
       }}
     >
       {children}

@@ -1,19 +1,22 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { FaUser, FaShoppingCart, FaSearch } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
 import { Drawer, Button, Input, Dropdown, Menu } from "antd";
-import { MenuOutlined } from "@ant-design/icons";
+import { MenuOutlined, DownOutlined } from "@ant-design/icons";
 import { useUser } from "../context/usercontext";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [userDropdownVisible, setUserDropdownVisible] = useState(false);
   const navigate = useNavigate();
 
   const { isLoggedIn, isAdmin, logout } = useUser();
 
   const toggleMenu = () => {
     setIsOpen(!isOpen);
+    // Close user dropdown when opening menu drawer
+    setUserDropdownVisible(false);
   };
 
   const closeMenu = () => {
@@ -22,15 +25,32 @@ const Navbar = () => {
 
   const handleIconClick = () => {
     if (isLoggedIn) {
-      navigate("/profile");
+      // On mobile: toggle dropdown instead of navigation
+      if (window.innerWidth < 1024) {
+        setUserDropdownVisible(!userDropdownVisible);
+      } else {
+        navigate("/profile");
+      }
     } else {
       navigate("/login");
     }
   };
 
+  // Direct navigation functions without event parameters
+  const goToProfile = () => {
+    navigate("/profile");
+    setUserDropdownVisible(false);
+  };
+
+  const goToOrders = () => {
+    navigate("/order");
+    setUserDropdownVisible(false);
+  };
+
   const handleLogout = () => {
     logout();
     navigate("/login");
+    setUserDropdownVisible(false);
   };
 
   const handleSearchChange = (e) => {
@@ -40,9 +60,34 @@ const Navbar = () => {
   const handleSearchSubmit = (e) => {
     if (e.key === "Enter") {
       navigate(`/shop?search=${searchQuery}`);
+      closeMenu();
     }
   };
 
+  // Close dropdown when clicking anywhere on document
+  useEffect(() => {
+    const handleDocumentClick = () => {
+      if (userDropdownVisible) {
+        setUserDropdownVisible(false);
+      }
+    };
+
+    // Use setTimeout to allow the current click event to finish
+    // before adding the document click listener
+    let timeoutId;
+    if (userDropdownVisible) {
+      timeoutId = setTimeout(() => {
+        document.addEventListener("click", handleDocumentClick);
+      }, 0);
+    }
+
+    return () => {
+      clearTimeout(timeoutId);
+      document.removeEventListener("click", handleDocumentClick);
+    };
+  }, [userDropdownVisible]);
+
+  // Standard dropdown for desktop view
   const dropdownMenu = (
     <Menu>
       <Menu.Item key="profile" onClick={() => navigate("/profile")}>
@@ -52,7 +97,7 @@ const Navbar = () => {
         Orders
       </Menu.Item>
       <Menu.Item key="logout" onClick={handleLogout}>
-        Logout
+        <span className="text-red-500">Logout</span>
       </Menu.Item>
     </Menu>
   );
@@ -96,17 +141,33 @@ const Navbar = () => {
             </Link>
           )}
 
-          <Dropdown
-            overlay={dropdownMenu}
-            trigger={isLoggedIn ? ["hover"] : []}
-          >
+          {/* Desktop: Use Ant Design Dropdown */}
+          <div className="hidden lg:block">
+            <Dropdown
+              overlay={dropdownMenu}
+              trigger={isLoggedIn ? ["hover"] : []}
+            >
+              <div
+                onClick={handleIconClick}
+                className="text-xl cursor-pointer flex items-center"
+              >
+                <FaUser />
+              </div>
+            </Dropdown>
+          </div>
+
+          {/* Mobile: User icon */}
+          <div className="lg:hidden">
             <div
-              onClick={handleIconClick}
-              className="text-xl cursor-pointer flex items-center"
+              onClick={(e) => {
+                e.stopPropagation(); // Stop event from bubbling
+                handleIconClick();
+              }}
+              className="text-xl cursor-pointer flex items-center relative"
             >
               <FaUser />
             </div>
-          </Dropdown>
+          </div>
 
           <Link to="/cart" className="text-xl">
             <FaShoppingCart />
@@ -114,37 +175,70 @@ const Navbar = () => {
         </div>
       </nav>
 
+      {/* Mobile user dropdown - completely separate from other components */}
+      {isLoggedIn && userDropdownVisible && (
+        <div
+          className="fixed top-16 right-16 bg-white shadow-lg rounded-md py-2 w-32 z-50"
+          onClick={(e) => e.stopPropagation()} // Prevent clicks from bubbling up
+        >
+          <Link to="/profile" className="block">
+            <div
+              className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+              onClick={goToProfile}
+            >
+              Profile
+            </div>
+          </Link>
+
+          <Link to="/order" className="block">
+            <div
+              className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+              onClick={goToOrders}
+            >
+              Orders
+            </div>
+          </Link>
+
+          <div
+            className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-red-500"
+            onClick={handleLogout}
+          >
+            Logout
+          </div>
+        </div>
+      )}
+
       <Drawer
         placement="left"
         closable={false}
         onClose={closeMenu}
-        visible={isOpen}
+        open={isOpen}
         width={250}
       >
         <ul className="flex flex-col gap-6 text-lg">
-          <Link to="/home">
+          <Link to="/home" onClick={closeMenu}>
             <li className="cursor-pointer hover:bg-gray-300 p-2 rounded">
               Home
             </li>
           </Link>
-          <Link to="/shop">
+          <Link to="/shop" onClick={closeMenu}>
             <li className="cursor-pointer hover:bg-gray-300 p-2 rounded">
               Shop All
             </li>
           </Link>
-          <Link to="/shop?gender=Men">
+          <Link to="/shop?gender=Men" onClick={closeMenu}>
             <li className="cursor-pointer hover:bg-gray-300 p-2 rounded">
               Men
             </li>
           </Link>
-          <Link to="/shop?gender=Women">
+          <Link to="/shop?gender=Women" onClick={closeMenu}>
             <li className="cursor-pointer hover:bg-gray-300 p-2 rounded">
               Women
             </li>
           </Link>
 
           {isAdmin && (
-            <Link to="/admin">
+            <Link to="/admin" onClick={closeMenu}>
               <li className="cursor-pointer hover:bg-gray-300 hover:text-black p-2 rounded font-semibold bg-black text-white">
                 Admin Panel
               </li>

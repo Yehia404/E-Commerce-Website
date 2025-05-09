@@ -3,8 +3,9 @@ import { FaStar } from "react-icons/fa";
 import Hero from "../assets/hero.jpg";
 import Navbar from "../components/navbar";
 import Footer from "../components/footer";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
+import { useUser } from "../context/usercontext";
 import axios from "axios";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -14,8 +15,25 @@ const Home = () => {
   const [topReviews, setTopReviews] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const navigate = useNavigate();
+  const location = useLocation();
+  const { isLoggedIn } = useUser();
 
   useEffect(() => {
+    // Check if we have a successful order state and show toast
+    if (location.state?.showToast) {
+      toast.success("Your order has been placed successfully!", {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
+
+      // Clear the state after showing the toast
+      window.history.replaceState({}, document.title);
+    }
+
     const fetchNewArrivals = async () => {
       try {
         const response = await axios.get(
@@ -48,7 +66,7 @@ const Home = () => {
 
     fetchNewArrivals();
     fetchCollection();
-  }, []);
+  }, [location.state]);
 
   useEffect(() => {
     const aggregateReviews = () => {
@@ -95,56 +113,108 @@ const Home = () => {
   return (
     <div className="font-sans">
       <ToastContainer />
-      <div className="bg-black text-white text-sm text-center py-2">
-        Sign up now to get 20% off your first order!{" "}
-        <span className="underline cursor-pointer">Sign Up Now</span>
-      </div>
+      {!isLoggedIn && (
+        <div className="bg-black text-white text-sm text-center py-2">
+          Sign up now to get 20% off your first order!{" "}
+          <Link to="/register" className="underline cursor-pointer">
+            Sign Up Now
+          </Link>
+        </div>
+      )}
 
       <Navbar />
 
-      <section className="bg-gray-100 py-12 px-6 lg:flex justify-between items-center">
-        <div className="lg:w-1/2 space-y-6">
-          <h1 className="text-4xl font-bold leading-tight">
-            Find Clothes That Matches <br /> Your Style
-          </h1>
-          <p className="text-gray-600">
-            Browse through our diverse range of meticulously crafted garments,
-            designed to bring out your individuality and cater to your sense of
-            style.
-          </p>
+      {/* Hero Section - Responsive with image behind text on mobile */}
+      <section className="relative">
+        {/* Background Image for Mobile and Tablet */}
+        <div className="lg:hidden w-full h-[500px] relative">
+          <div className="absolute inset-0 bg-black opacity-50 z-10"></div>
+          <img src={Hero} alt="hero" className="w-full h-full object-cover" />
+        </div>
 
-          <div>
-            <Link
-              to="/shop"
-              className="bg-black text-white px-12 py-2 rounded-full"
-            >
-              Shop Now
-            </Link>
-          </div>
+        {/* Content that sits on top of the background on mobile/tablet */}
+        <div className="lg:hidden absolute inset-0 z-20 flex flex-col justify-center px-6 py-12">
+          <div className="text-white space-y-6">
+            <h1 className="text-4xl font-bold leading-tight">
+              Find Clothes That Matches <br /> Your Style
+            </h1>
+            <p className="text-gray-200">
+              Browse through our diverse range of meticulously crafted garments,
+              designed to bring out your individuality and cater to your sense
+              of style.
+            </p>
 
-          <div className="flex gap-6 pt-4">
             <div>
-              <p className="font-bold text-lg">200+</p>
-              <p className="text-sm">International Brands</p>
+              <Link
+                to="/shop"
+                className="inline-block bg-black text-white px-12 py-2 rounded-full border border-white"
+              >
+                Shop Now
+              </Link>
             </div>
-            <div>
-              <p className="font-bold text-lg">2,000+</p>
-              <p className="text-sm">High-Quality Products</p>
-            </div>
-            <div>
-              <p className="font-bold text-lg">30,000+</p>
-              <p className="text-sm">Happy Customers</p>
+
+            <div className="flex gap-6 pt-4">
+              <div>
+                <p className="font-bold text-lg">200+</p>
+                <p className="text-sm">International Brands</p>
+              </div>
+              <div>
+                <p className="font-bold text-lg">2,000+</p>
+                <p className="text-sm">High-Quality Products</p>
+              </div>
+              <div>
+                <p className="font-bold text-lg">30,000+</p>
+                <p className="text-sm">Happy Customers</p>
+              </div>
             </div>
           </div>
         </div>
-        <div className="hidden lg:block lg:w-1/2">
-          <img src={Hero} alt="hero" className="rounded-xl" />
+
+        {/* Desktop Layout with side-by-side content and image */}
+        <div className="hidden lg:flex bg-gray-100 justify-between items-center px-6 py-12">
+          <div className="w-1/2 space-y-6">
+            <h1 className="text-4xl font-bold leading-tight">
+              Find Clothes That Matches <br /> Your Style
+            </h1>
+            <p className="text-gray-600">
+              Browse through our diverse range of meticulously crafted garments,
+              designed to bring out your individuality and cater to your sense
+              of style.
+            </p>
+
+            <div>
+              <Link
+                to="/shop"
+                className="bg-black text-white px-12 py-2 rounded-full inline-block"
+              >
+                Shop Now
+              </Link>
+            </div>
+
+            <div className="flex gap-6 pt-4">
+              <div>
+                <p className="font-bold text-lg">200+</p>
+                <p className="text-sm">International Brands</p>
+              </div>
+              <div>
+                <p className="font-bold text-lg">2,000+</p>
+                <p className="text-sm">High-Quality Products</p>
+              </div>
+              <div>
+                <p className="font-bold text-lg">30,000+</p>
+                <p className="text-sm">Happy Customers</p>
+              </div>
+            </div>
+          </div>
+          <div className="w-1/2">
+            <img src={Hero} alt="hero" className="rounded-xl" />
+          </div>
         </div>
       </section>
 
       <section className="px-6 py-10">
         <h2 className="text-2xl font-bold mb-6">NEW ARRIVALS</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
           {newArrivals.map((item) => {
             const discountedPrice = calculateDiscountedPrice(
               item.price,
@@ -155,18 +225,20 @@ const Home = () => {
             return (
               <div
                 key={item._id}
-                className="border p-4 rounded-md cursor-pointer"
+                className="border p-3 md:p-4 rounded-md cursor-pointer hover:shadow-md transition-shadow"
                 onClick={() => navigate(`/product/${item._id}`)}
               >
-                <div className="relative pb-[100%] mb-4 overflow-hidden rounded-md">
+                <div className="relative pb-[100%] mb-3 md:mb-4 overflow-hidden rounded-md">
                   <img
                     src={item.image}
                     alt={item.name}
                     className="absolute h-full w-full object-cover"
                   />
                 </div>
-                <p className="font-semibold">{item.name}</p>
-                <div className="flex items-center text-yellow-500 text-sm">
+                <p className="font-semibold text-sm md:text-base line-clamp-1">
+                  {item.name}
+                </p>
+                <div className="flex items-center text-yellow-500 text-xs md:text-sm">
                   {[...Array(5)].map((_, i) => (
                     <FaStar
                       key={i}
@@ -178,12 +250,12 @@ const Home = () => {
                     />
                   ))}
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 text-sm md:text-base">
                   <span className="font-bold">
                     ${discountedPrice.toFixed(2)}
                   </span>
                   {item.price !== discountedPrice && (
-                    <span className="text-gray-500 line-through">
+                    <span className="text-gray-500 line-through text-xs md:text-sm">
                       ${item.price.toFixed(2)}
                     </span>
                   )}
@@ -194,7 +266,7 @@ const Home = () => {
         </div>
         <button
           onClick={() => navigate("/shop")}
-          className="block mt-6 mx-auto bg-black text-white px-12 py-2 rounded-full"
+          className="block mt-6 mx-auto bg-black text-white px-10 md:px-12 py-2 rounded-full"
         >
           View All
         </button>
@@ -202,7 +274,7 @@ const Home = () => {
 
       <section className="px-6 py-10">
         <h2 className="text-2xl font-bold mb-6">COLLECTION</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
           {collection.map((item) => {
             const discountedPrice = calculateDiscountedPrice(
               item.price,
@@ -213,18 +285,20 @@ const Home = () => {
             return (
               <div
                 key={item._id}
-                className="border p-4 rounded-md cursor-pointer"
+                className="border p-3 md:p-4 rounded-md cursor-pointer hover:shadow-md transition-shadow"
                 onClick={() => navigate(`/product/${item._id}`)}
               >
-                <div className="relative pb-[100%] mb-4 overflow-hidden rounded-md">
+                <div className="relative pb-[100%] mb-3 md:mb-4 overflow-hidden rounded-md">
                   <img
                     src={item.image}
                     alt={item.name}
                     className="absolute h-full w-full object-cover"
                   />
                 </div>
-                <p className="font-semibold">{item.name}</p>
-                <div className="flex items-center text-yellow-500 text-sm">
+                <p className="font-semibold text-sm md:text-base line-clamp-1">
+                  {item.name}
+                </p>
+                <div className="flex items-center text-yellow-500 text-xs md:text-sm">
                   {[...Array(5)].map((_, i) => (
                     <FaStar
                       key={i}
@@ -236,12 +310,12 @@ const Home = () => {
                     />
                   ))}
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 text-sm md:text-base">
                   <span className="font-bold">
                     ${discountedPrice.toFixed(2)}
                   </span>
                   {item.price !== discountedPrice && (
-                    <span className="text-gray-500 line-through">
+                    <span className="text-gray-500 line-through text-xs md:text-sm">
                       ${item.price.toFixed(2)}
                     </span>
                   )}
@@ -252,7 +326,7 @@ const Home = () => {
         </div>
         <button
           onClick={() => navigate("/shop")}
-          className="block mt-6 mx-auto bg-black text-white px-12 py-2 rounded-full"
+          className="block mt-6 mx-auto bg-black text-white px-10 md:px-12 py-2 rounded-full"
         >
           View All
         </button>
@@ -262,7 +336,7 @@ const Home = () => {
         <h2 className="text-2xl font-bold mb-6 text-center">
           OUR HAPPY CUSTOMERS
         </h2>
-        <div className="grid md:grid-cols-3 gap-6 transition-all duration-500 ease-in-out">
+        <div className="grid md:grid-cols-3 gap-4 md:gap-6 transition-all duration-500 ease-in-out">
           {getVisibleTestimonials().map(
             (review, i) =>
               review && (
